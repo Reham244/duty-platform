@@ -22,3 +22,12 @@ export interface Duty {
   start: string; // "12:00"
   end: string;
 }
+// Attendance types 
+export type AttendanceStatus = "present" | "late" | "absent";
+
+export interface AttendanceRecord {
+  id: number;
+  dutyId: number; // which duty this record belongs to
+  date: string; // "2026-10-06"
+  status: AttendanceStatus;
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getUsers } from "./api";
 import type { User } from "./types";
+import MyDuties from "./components/MyDuties";
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
@@ -36,6 +37,11 @@ function App() {
           You are signed in as <b>{current.fullName}</b> with the role{" "}
           <b>{current.role}</b>.
         </p>
+      )}
+            {current?.role === "teacher" ? (
+        <MyDuties user={current} />
+      ) : (
+        <p>This screen is coming soon.</p>
       )}
     </div>
   );

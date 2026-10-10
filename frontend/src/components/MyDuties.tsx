@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { getMyDuties } from "../api";
 import type { Duty, DutyType, User } from "../types";
+import MyAttendance from "./MyAttendance";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 const dutyTypes: { type: DutyType; label: string }[] = [
@@ -86,6 +87,7 @@ export default function MyDuties({ user }: { user: User }) {
           ))}
         </tbody>
       </table>
+         <MyAttendance user={user} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { Duty, StageName, User } from "../types";//dummy data for users, stages 
+import type { AttendanceRecord, Duty, StageName, User } from "../types";//dummy data for users, stages 
 export const stages: StageName[] = ["Foundation", "Elementary", "Middle", "High"];
 
 export const users: User[] = [
@@ -22,4 +22,25 @@ export const duties: Duty[] = [
   { id: 11, userId: 1, stage: "Middle", type: "break", place: "Cafeteria", day: 2, start: "13:10", end: "13:40" },
   { id: 12, userId: 1, stage: "Middle", type: "dismissal", place: "Garage", day: 3, start: "14:40", end: "14:55" },
   { id: 13, userId: 1, stage: "Middle", type: "dismissal", place: "Gate 7", day: 4, start: "14:40", end: "14:55" },
+];
+
+//Dummy Attendance data 
+export const attendanceRecords: AttendanceRecord[] = [
+  { id: 1, dutyId: 1, date: "2026-10-04", status: "present" },
+  { id: 2, dutyId: 1, date: "2026-09-27", status: "present" },
+  { id: 3, dutyId: 1, date: "2026-09-20", status: "present" },
+  { id: 4, dutyId: 5, date: "2026-10-04", status: "present" },
+  { id: 5, dutyId: 5, date: "2026-09-27", status: "late" },
+  { id: 6, dutyId: 6, date: "2026-10-05", status: "late" },
+  { id: 7, dutyId: 6, date: "2026-09-28", status: "present" },
+  { id: 8, dutyId: 7, date: "2026-10-06", status: "present" },
+  { id: 9, dutyId: 7, date: "2026-09-29", status: "present" },
+  { id: 10, dutyId: 2, date: "2026-10-06", status: "present" },
+  { id: 11, dutyId: 2, date: "2026-09-29", status: "present" },
+  { id: 12, dutyId: 9, date: "2026-10-04", status: "present" },
+  { id: 13, dutyId: 9, date: "2026-09-27", status: "present" },
+  { id: 14, dutyId: 13, date: "2026-10-01", status: "absent" },
+  { id: 15, dutyId: 13, date: "2026-09-24", status: "present" },
+  { id: 16, dutyId: 12, date: "2026-09-30", status: "present" },
+  { id: 17, dutyId: 12, date: "2026-09-23", status: "present" },
 ];

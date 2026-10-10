@@ -17,8 +17,7 @@ function App() {
   const current = users.find((u) => u.id === currentId);
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Duty Platform</h1>
+<div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>      <h1>Duty Platform</h1>
       <label>
         View as:{" "}
         <select

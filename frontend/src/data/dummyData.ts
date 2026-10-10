@@ -1,13 +1,25 @@
-import type { AttendanceRecord, Duty, StageName, User } from "../types";//dummy data for users, stages 
+import type { AttendanceRecord, Duty, DutyTypeInfo, StageName, User } from "../types";
+
 export const stages: StageName[] = ["Foundation", "Elementary", "Middle", "High"];
+
+export const dutyTypes: DutyTypeInfo[] = [
+  { code: "snack", name: "Snack", colour: "#2f6fb5", weight: 1 },
+  { code: "break", name: "Break", colour: "#c9820a", weight: 1 },
+  { code: "dismissal", name: "Dismissal", colour: "#7a4fb0", weight: 1 },
+];
 
 export const users: User[] = [
   { id: 1, fullName: "Teacher 43", role: "teacher", subject: "French" },
   { id: 2, fullName: "Supervisor 01", role: "supervisor" },
   { id: 3, fullName: "Head of Elementary", role: "head_of_stage", homeStage: "Elementary" },
   { id: 4, fullName: "Admin 01", role: "admin" },
+  { id: 5, fullName: "Teacher 14", role: "teacher", homeStage: "Elementary", subject: "ELA" },
+  { id: 6, fullName: "Teacher 15", role: "teacher", homeStage: "Elementary", subject: "Science" },
+  { id: 7, fullName: "Teacher 16", role: "teacher", homeStage: "Elementary", subject: "Arabic" },
+  { id: 8, fullName: "Teacher 17", role: "teacher", homeStage: "Elementary", subject: "STEM" },
+  { id: 9, fullName: "Teacher 18", role: "teacher", homeStage: "Elementary", subject: "Social Studies" },
 ];
-//dumy data for duties 
+
 export const duties: Duty[] = [
   { id: 1, userId: 1, stage: "Foundation", type: "dismissal", place: "Gate 7", day: 0, start: "14:00", end: "14:15" },
   { id: 2, userId: 1, stage: "Foundation", type: "snack", place: "Basketball Field", day: 2, start: "08:45", end: "09:00" },
@@ -22,9 +34,14 @@ export const duties: Duty[] = [
   { id: 11, userId: 1, stage: "Middle", type: "break", place: "Cafeteria", day: 2, start: "13:10", end: "13:40" },
   { id: 12, userId: 1, stage: "Middle", type: "dismissal", place: "Garage", day: 3, start: "14:40", end: "14:55" },
   { id: 13, userId: 1, stage: "Middle", type: "dismissal", place: "Gate 7", day: 4, start: "14:40", end: "14:55" },
+  // Elementary break on Wednesday: other teachers
+  { id: 14, userId: 5, stage: "Elementary", type: "break", place: "Soccer Field", day: 3, start: "12:35", end: "13:05" },
+  { id: 15, userId: 6, stage: "Elementary", type: "break", place: "Basketball Field", day: 3, start: "12:35", end: "13:05" },
+  { id: 16, userId: 7, stage: "Elementary", type: "break", place: "Rainbow Lane", day: 3, start: "12:35", end: "13:05" },
+  { id: 17, userId: 8, stage: "Elementary", type: "break", place: "Cafeteria", day: 3, start: "12:35", end: "13:05" },
+  { id: 18, userId: 9, stage: "Elementary", type: "break", place: "Cafeteria", day: 3, start: "12:35", end: "13:05" },
 ];
 
-//Dummy Attendance data 
 export const attendanceRecords: AttendanceRecord[] = [
   { id: 1, dutyId: 1, date: "2026-10-04", status: "present" },
   { id: 2, dutyId: 1, date: "2026-09-27", status: "present" },

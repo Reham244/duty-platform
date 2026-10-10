@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getUsers } from "./api";
 import type { User } from "./types";
 import MyDuties from "./components/MyDuties";
+import AttendanceCards from "./components/AttendanceCards";
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
@@ -17,7 +18,8 @@ function App() {
   const current = users.find((u) => u.id === currentId);
 
   return (
-<div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>      <h1>Duty Platform</h1>
+    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
+      <h1>Duty Platform</h1>
       <label>
         View as:{" "}
         <select
@@ -37,11 +39,10 @@ function App() {
           <b>{current.role}</b>.
         </p>
       )}
-            {current?.role === "teacher" ? (
-        <MyDuties user={current} />
-      ) : (
-        <p>This screen is coming soon.</p>
-      )}
+
+      {current?.role === "teacher" && <MyDuties user={current} />}
+      {(current?.role === "supervisor" || current?.role === "admin") && <AttendanceCards />}
+      {current?.role === "head_of_stage" && <p>The statistics screen is coming soon.</p>}
     </div>
   );
 }

@@ -63,3 +63,52 @@ export async function markAttendance(dutyId: number, date: string, status: Atten
     attendanceRecords.push({ id: nextRecordId++, dutyId, date, status });
   }
 }
+
+// ---------- Statistics ----------
+
+function minutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
+
+export function dutyHours(d: Duty): number {
+  return (minutes(d.end) - minutes(d.start)) / 60;
+}
+
+export interface StatsRow {
+  person: User;
+  present: number;
+  late: number;
+  absent: number;
+  marked: number; // present + late + absent
+  rate: number; // present / marked, in percent
+  hours: number; // hours on duty (present and late)
+}
+
+export async function getStats(stage: StageName | "all", from: string, to: string): Promise<StatsRow[]> {
+  const rows = new Map<number, StatsRow>();
+
+  for (const r of attendanceRecords) {
+    if (r.date < from || r.date > to) continue;
+    const duty = duties.find((d) => d.id === r.dutyId);
+    if (!duty) continue;
+    if (stage !== "all" && duty.stage !== stage) continue;
+    const person = users.find((u) => u.id === duty.userId);
+    if (!person) continue;
+
+    let row = rows.get(person.id);
+    if (!row) {
+      row = { person, present: 0, late: 0, absent: 0, marked: 0, rate: 0, hours: 0 };
+      rows.set(person.id, row);
+    }
+    row[r.status] += 1;
+    row.marked += 1;
+    if (r.status !== "absent") row.hours += dutyHours(duty);
+  }
+
+  const list = [...rows.values()];
+  list.forEach((row) => {
+    row.rate = Math.round((row.present / row.marked) * 100);
+  });
+  return list.sort((a, b) => a.person.fullName.localeCompare(b.person.fullName));
+}

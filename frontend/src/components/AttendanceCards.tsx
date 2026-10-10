@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCards, getDutyTypes, getStages, markAttendance } from "../api";
 import type { Card } from "../api";
-import type { AttendanceStatus, CardStatus, DutyTypeInfo, StageName } from "../types";
+import type { AttendanceStatus, CardStatus, DutyTypeInfo, StageName, User } from "../types";
 
 const colours: Record<AttendanceStatus, string> = {
   present: "#1f7a4d",
@@ -15,10 +15,11 @@ const buttons: { status: AttendanceStatus; label: string }[] = [
   { status: "absent", label: "Absent" },
 ];
 
-export default function AttendanceCards() {
+export default function AttendanceCards({ user }: { user: User }) {
   const [stages, setStages] = useState<StageName[]>([]);
   const [types, setTypes] = useState<DutyTypeInfo[]>([]);
-  const [stage, setStage] = useState<StageName>("Elementary");
+  // A head of stage starts on their own stage; others start on Elementary.
+  const [stage, setStage] = useState<StageName>(user.homeStage ?? "Elementary");
   const [date, setDate] = useState("2026-10-07"); // a Wednesday, for the demo
   const [cards, setCards] = useState<Card[]>([]);
 
@@ -48,7 +49,11 @@ export default function AttendanceCards() {
       <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", marginBottom: 16 }}>
         <label>
           Stage{" "}
-          <select value={stage} onChange={(e) => setStage(e.target.value as StageName)}>
+          <select
+            value={stage}
+            disabled={user.role === "head_of_stage"}
+            onChange={(e) => setStage(e.target.value as StageName)}
+          >
             {stages.map((s) => (
               <option key={s}>{s}</option>
             ))}

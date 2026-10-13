@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { addDuty, deleteDuty, getDutyTypes, getStageDuties, getStages, getUsers } from "../api";
 import type { Duty, DutyTypeInfo, StageName, User } from "../types";
+import { DutyBlock, Legend } from "./DutyBlock";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
@@ -152,40 +153,43 @@ export default function ManageSchedule({ user }: { user: User }) {
           No duties scheduled for {stage} yet. Use the form above to add the first one.
         </div>
       ) : (
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr>
-              <th style={cell}>Duty</th>
-              {days.map((n) => (
-                <th key={n} style={cell}>{n}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {types.map((t) => (
-              <tr key={t.code}>
-                <td style={cell}>
-                  <b style={{ color: t.colour }}>{t.name}</b>
-                </td>
-                {days.map((n, i) => (
-                  <td key={n} style={cell}>
-                    {duties
-                      .filter((d) => d.type === t.code && d.day === i)
-                      .sort(byTime)
-                      .map((d) => (
-                        <div key={d.id} style={{ marginBottom: 8, paddingBottom: 6, borderBottom: "1px dashed #e3e8ee" }}>
-                          <b>{nameOf(d.userId)}</b>
-                          <br />
-                          <small>{d.place}, {d.start} to {d.end}</small>{" "}
-                          <button onClick={() => remove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
-                        </div>
-                      ))}
-                  </td>
+        <>
+          <Legend types={types} />
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
+            <thead>
+              <tr>
+                <th style={cell}>Duty</th>
+                {days.map((n) => (
+                  <th key={n} style={cell}>{n}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {types.map((t) => (
+                <tr key={t.code}>
+                  <td style={{ ...cell, borderLeft: `6px solid ${t.colour}` }}>
+                    <b>{t.name}</b>
+                  </td>
+                  {days.map((n, i) => (
+                    <td key={n} style={cell}>
+                      {duties
+                        .filter((d) => d.type === t.code && d.day === i)
+                        .sort(byTime)
+                        .map((d) => (
+                          <DutyBlock key={d.id} colour={t.colour}>
+                            <b>{nameOf(d.userId)}</b>
+                            <br />
+                            <small>{d.place}, {d.start} to {d.end}</small>{" "}
+                            <button onClick={() => remove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
+                          </DutyBlock>
+                        ))}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
       <p style={{ color: "#6b7a90", fontSize: 13 }}>
         A teacher cannot have two duties at the same time. A duty with attendance history cannot be deleted.

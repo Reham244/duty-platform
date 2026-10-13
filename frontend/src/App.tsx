@@ -1,15 +1,27 @@
 import { useEffect, useState } from "react";
 import { getUsers } from "./api";
-import { menuByRole, screens } from "./roles";
+import { menuByRole } from "./roles";
 import type { ScreenId } from "./roles";
 import type { User } from "./types";
+import Layout from "./components/Layout";
 import MyDuties from "./components/MyDuties";
 import AttendanceCards from "./components/AttendanceCards";
-import ComingSoon from "./components/ComingSoon";
 import Statistics from "./components/Statistics";
 import Substitutions from "./components/Substitutions";
 import ManageSchedule from "./components/ManageSchedule";
 import DutyTypes from "./components/DutyTypes";
+import ComingSoon from "./components/ComingSoon";
+
+// Chooses which screen to show for the person and the menu item.
+function ScreenView({ user, screen }: { user: User; screen: ScreenId }) {
+  if (screen === "myDuties") return <MyDuties user={user} />;
+  if (screen === "attendance") return <AttendanceCards user={user} />;
+  if (screen === "stats" || screen === "allStats") return <Statistics user={user} />;
+  if (screen === "substitutions") return <Substitutions user={user} />;
+  if (screen === "schedule") return <ManageSchedule user={user} />;
+  if (screen === "dutyTypes") return <DutyTypes />;
+  return <ComingSoon id={screen} />;
+}
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
@@ -28,54 +40,19 @@ function App() {
   // If the chosen screen is not allowed for this role, fall back to its first screen.
   const active: ScreenId | undefined = menu.includes(screen) ? screen : menu[0];
 
-  function renderScreen() {
-    if (!current || !active) return null;
-    if (active === "myDuties") return <MyDuties user={current} />;
-    if (active === "attendance") return <AttendanceCards key={current.id} user={current} />;    
-        if (active === "stats" || active === "allStats") return <Statistics key={current.id + active} user={current} />;
-        if (active === "substitutions") return <Substitutions key={current.id} user={current} />;
-        if (active === "schedule") return <ManageSchedule key={current.id} user={current} />;
-        if (active === "dutyTypes") return <DutyTypes key={current.id} />;
-    return <ComingSoon id={active} />;
-  }
+  if (!current || !active) return <p style={{ padding: 24 }}>Loading...</p>;
 
   return (
-    <div style={{ padding: 24, maxWidth: 1100, margin: "0 auto" }}>
-      <h1>Duty Platform</h1>
-      <label>
-        View as:{" "}
-        <select value={currentId ?? ""} onChange={(e) => setCurrentId(Number(e.target.value))}>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.fullName} ({u.role})
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "16px 0" }}>
-        {menu.map((id) => (
-          <button
-            key={id}
-            onClick={() => setScreen(id)}
-            style={{
-              padding: "8px 14px",
-              borderRadius: 8,
-              border: "1px solid #d9e0e7",
-              background: id === active ? "#0f4c8a" : "white",
-              color: id === active ? "white" : "#1f2d3d",
-              fontWeight: id === active ? 700 : 400,
-              cursor: "pointer",
-            }}
-          >
-            {screens[id].title}
-            {!screens[id].ready && " (soon)"}
-          </button>
-        ))}
-      </div>
-
-      {renderScreen()}
-    </div>
+    <Layout
+      users={users}
+      current={current}
+      onUserChange={setCurrentId}
+      menu={menu}
+      active={active}
+      onSelect={setScreen}
+    >
+      <ScreenView key={`${current.id}-${active}`} user={current} screen={active} />
+    </Layout>
   );
 }
 

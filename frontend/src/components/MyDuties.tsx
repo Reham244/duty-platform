@@ -3,7 +3,8 @@ import type { CSSProperties } from "react";
 import { dateOfDay, getDutyTypes, getMyDuties, getMySubstituteDuties, hasEmergency, reportEmergency } from "../api";
 import type { SubstituteDuty } from "../api";
 import type { Duty, DutyTypeInfo, User } from "../types";
-import MyAttendance from "./MyAttendance";
+import MyAttendance, { AttendanceSummary } from "./MyAttendance";
+import { DutyBlock, Legend } from "./DutyBlock";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
@@ -49,6 +50,9 @@ export default function MyDuties({ user }: { user: User }) {
   return (
     <div>
       <h2>My duties</h2>
+
+      <AttendanceSummary user={user} />
+
       <label>
         Demo only, pretend today is:{" "}
         <select value={today} onChange={(e) => setToday(Number(e.target.value))}>
@@ -85,7 +89,9 @@ export default function MyDuties({ user }: { user: User }) {
         </div>
       )}
 
-      <table style={{ borderCollapse: "collapse", width: "100%", marginTop: 16 }}>
+      <Legend types={types} />
+
+      <table style={{ borderCollapse: "collapse", width: "100%" }}>
         <thead>
           <tr>
             <th style={cell}>Duty</th>
@@ -97,18 +103,20 @@ export default function MyDuties({ user }: { user: User }) {
         <tbody>
           {types.map((t) => (
             <tr key={t.code}>
-              <td style={cell}><b>{t.name}</b></td>
+              <td style={{ ...cell, borderLeft: `6px solid ${t.colour}`, background: "white" }}>
+                <b>{t.name}</b>
+              </td>
               {days.map((name, dayIndex) => (
                 <td key={name} style={{ ...cell, background: dayIndex === today ? "#eaf3ff" : "white" }}>
                   {duties
                     .filter((d) => d.type === t.code && d.day === dayIndex)
                     .sort(byTime)
                     .map((d) => (
-                      <div key={d.id} style={{ marginBottom: 6 }}>
+                      <DutyBlock key={d.id} colour={t.colour}>
                         <b>{d.place}</b>
                         <br />
                         <small>{d.stage}, {d.start} to {d.end}</small>
-                      </div>
+                      </DutyBlock>
                     ))}
                 </td>
               ))}
@@ -116,7 +124,8 @@ export default function MyDuties({ user }: { user: User }) {
           ))}
         </tbody>
       </table>
+
       <MyAttendance user={user} />
     </div>
   );
-}
+} 

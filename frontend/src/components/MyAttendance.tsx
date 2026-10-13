@@ -17,13 +17,17 @@ const labels: Record<AttendanceStatus, string> = {
 
 const cell: CSSProperties = { border: "1px solid #d9e0e7", padding: 8, textAlign: "left" };
 
-export default function MyAttendance({ user }: { user: User }) {
+function useRows(userId: number) {
   const [rows, setRows] = useState<AttendanceRow[]>([]);
-
   useEffect(() => {
-    getMyAttendance(user.id).then(setRows);
-  }, [user.id]);
+    getMyAttendance(userId).then(setRows);
+  }, [userId]);
+  return rows;
+}
 
+// The four boxes: on time, late, missed and the rate. Shown at the top of My duties.
+export function AttendanceSummary({ user }: { user: User }) {
+  const rows = useRows(user.id);
   const count = (s: AttendanceStatus) => rows.filter((r) => r.record.status === s).length;
   const present = count("present");
   const late = count("late");
@@ -32,21 +36,29 @@ export default function MyAttendance({ user }: { user: User }) {
   const rate = total === 0 ? 0 : Math.round((present / total) * 100);
 
   const box = (label: string, value: string, colour: string) => (
-    <div style={{ flex: 1, border: "1px solid #d9e0e7", borderRadius: 10, padding: 12, background: "white" }}>
+    <div style={{ flex: 1, minWidth: 140, border: "1px solid #d9e0e7", borderRadius: 10, padding: 12, background: "white" }}>
       <div style={{ color: "#6b7a90", fontSize: 13 }}>{label}</div>
       <div style={{ fontSize: 30, fontWeight: 700, color: colour }}>{value}</div>
     </div>
   );
 
   return (
+    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "16px 0" }}>
+      {box("On time", String(present), colours.present)}
+      {box("Late", String(late), colours.late)}
+      {box("Missed", String(absent), colours.absent)}
+      {box("Attendance rate", `${rate}%`, "#1b6fd1")}
+    </div>
+  );
+}
+
+// The history table. Shown at the bottom of My duties.
+export default function MyAttendance({ user }: { user: User }) {
+  const rows = useRows(user.id);
+
+  return (
     <div style={{ marginTop: 32 }}>
-      <h2>My attendance</h2>
-      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-        {box("On time", String(present), colours.present)}
-        {box("Late", String(late), colours.late)}
-        {box("Missed", String(absent), colours.absent)}
-        {box("Attendance rate", `${rate}%`, "#1b6fd1")}
-      </div>
+      <h2>My attendance history</h2>
       <table style={{ borderCollapse: "collapse", width: "100%", background: "white" }}>
         <thead>
           <tr>

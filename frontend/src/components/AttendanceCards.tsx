@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCards, getDutyTypes, getStages, markAttendance } from "../api";
+import { getCards, getDutyTypes, getStages, markAttendance, markSubstituteAttendance } from "../api";
 import type { Card } from "../api";
 import type { AttendanceStatus, CardStatus, DutyTypeInfo, StageName, User } from "../types";
 
@@ -14,6 +14,12 @@ const buttons: { status: AttendanceStatus; label: string }[] = [
   { status: "late", label: "Late" },
   { status: "absent", label: "Absent" },
 ];
+
+const chip = (text: string, colour: string) => (
+  <span style={{ background: colour, color: "white", padding: "2px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700, marginRight: 8 }}>
+    {text}
+  </span>
+);
 
 export default function AttendanceCards({ user }: { user: User }) {
   const [stages, setStages] = useState<StageName[]>([]);
@@ -39,8 +45,35 @@ export default function AttendanceCards({ user }: { user: User }) {
     setCards(await getCards(stage, day, date));
   }
 
+  async function markSubstitute(substitutionId: number, status: AttendanceStatus) {
+    await markSubstituteAttendance(substitutionId, status);
+    setCards(await getCards(stage, day, date));
+  }
+
   const count = (s: CardStatus) => cards.filter((c) => c.status === s).length;
   const typeInfo = (code: string) => types.find((t) => t.code === code);
+
+  const statusButtons = (current: string, onPick: (s: AttendanceStatus) => void) => (
+    <div style={{ display: "flex", gap: 8 }}>
+      {buttons.map((b) => (
+        <button
+          key={b.status}
+          onClick={() => onPick(b.status)}
+          style={{
+            padding: "8px 14px",
+            borderRadius: 8,
+            border: `1px solid ${current === b.status ? colours[b.status] : "#d9e0e7"}`,
+            background: current === b.status ? colours[b.status] : "white",
+            color: current === b.status ? "white" : "#1f2d3d",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {b.label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div>
@@ -69,6 +102,7 @@ export default function AttendanceCards({ user }: { user: User }) {
         <span style={{ color: colours.present }}>Present {count("present")}</span>
         <span style={{ color: colours.late }}>Late {count("late")}</span>
         <span style={{ color: colours.absent }}>Absent {count("absent")}</span>
+        <span style={{ color: "#7a4fb0" }}>Substituted {count("substituted")}</span>
         <span style={{ color: "#6b7a90" }}>Unmarked {count("unmarked")}</span>
       </div>
 
@@ -78,54 +112,54 @@ export default function AttendanceCards({ user }: { user: User }) {
         </div>
       )}
 
-      {cards.map(({ duty, person, status }) => {
+      {cards.map(({ duty, person, status, emergency, substitution }) => {
         const info = typeInfo(duty.type);
         return (
           <div
             key={duty.id}
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-              background: "white",
+              background: status === "substituted" ? "#faf7fd" : "white",
               border: "1px solid #d9e0e7",
               borderRadius: 10,
               padding: "12px 16px",
               marginBottom: 10,
             }}
           >
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 700 }}>
-                {person.fullName} ({person.subject})
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 700 }}>
+                  {person.fullName} ({person.subject})
+                </div>
+                <div style={{ color: "#6b7a90", fontSize: 14 }}>
+                  {chip(info?.name ?? duty.type, info?.colour ?? "#6b7a90")}
+                  {duty.place}, {duty.start} to {duty.end}
+                  {emergency && <span style={{ marginLeft: 8 }}>{chip("Emergency reported", "#b5651d")}</span>}
+                </div>
               </div>
-              <div style={{ color: "#6b7a90", fontSize: 14 }}>
-                <span style={{ background: info?.colour ?? "#6b7a90", color: "white", padding: "2px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700, marginRight: 8 }}>
-                  {info?.name ?? duty.type}
-                </span>
-                {duty.place}, {duty.start} to {duty.end}
+              {status === "substituted"
+                ? chip("Substituted (excused)", "#7a4fb0")
+                : statusButtons(status, (s) => mark(duty.id, s))}
+            </div>
+
+            {substitution && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                  flexWrap: "wrap",
+                  marginTop: 10,
+                  paddingTop: 10,
+                  borderTop: "1px dashed #d9e0e7",
+                }}
+              >
+                <div>
+                  Substitute: <b>{substitution.person.fullName}</b> ({substitution.person.subject})
+                </div>
+                {statusButtons(substitution.status, (s) => markSubstitute(substitution.id, s))}
               </div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {buttons.map((b) => (
-                <button
-                  key={b.status}
-                  onClick={() => mark(duty.id, b.status)}
-                  style={{
-                    padding: "8px 14px",
-                    borderRadius: 8,
-                    border: `1px solid ${status === b.status ? colours[b.status] : "#d9e0e7"}`,
-                    background: status === b.status ? colours[b.status] : "white",
-                    color: status === b.status ? "white" : "#1f2d3d",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  {b.label}
-                </button>
-              ))}
-            </div>
+            )}
           </div>
         );
       })}

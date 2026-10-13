@@ -1,4 +1,4 @@
-import type { AttendanceRecord, Duty, DutyTypeInfo, StageName, User } from "../types";
+import type { AttendanceRecord, Duty, DutyTypeInfo, EmergencyReport, StageName, Substitution, User } from "../types";
 
 export const stages: StageName[] = ["Foundation", "Elementary", "Middle", "High"];
 
@@ -18,6 +18,8 @@ export const users: User[] = [
   { id: 7, fullName: "Teacher 16", role: "teacher", homeStage: "Elementary", subject: "Arabic" },
   { id: 8, fullName: "Teacher 17", role: "teacher", homeStage: "Elementary", subject: "STEM" },
   { id: 9, fullName: "Teacher 18", role: "teacher", homeStage: "Elementary", subject: "Social Studies" },
+  { id: 10, fullName: "Teacher 19", role: "teacher", homeStage: "Elementary", subject: "Art" },
+  { id: 11, fullName: "Teacher 20", role: "teacher", homeStage: "Elementary", subject: "CS" },
 ];
 
 export const duties: Duty[] = [
@@ -80,4 +82,11 @@ export const attendanceRecords: AttendanceRecord[] = [
   { id: 35, dutyId: 18, date: "2026-09-16", status: "present" },
   { id: 36, dutyId: 18, date: "2026-09-23", status: "present" },
   { id: 37, dutyId: 18, date: "2026-09-30", status: "late" },
+];
+
+export const emergencyReports: EmergencyReport[] = [];
+
+export const substitutions: Substitution[] = [
+  // one past substitution, so the "so far" count differs between teachers
+  { id: 1, dutyId: 17, date: "2026-09-02", substituteId: 10, reason: "Emergency", status: "present" },
 ];

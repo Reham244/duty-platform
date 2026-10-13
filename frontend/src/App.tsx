@@ -7,6 +7,9 @@ import MyDuties from "./components/MyDuties";
 import AttendanceCards from "./components/AttendanceCards";
 import ComingSoon from "./components/ComingSoon";
 import Statistics from "./components/Statistics";
+import Substitutions from "./components/Substitutions";
+import ManageSchedule from "./components/ManageSchedule";
+import DutyTypes from "./components/DutyTypes";
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
@@ -30,6 +33,9 @@ function App() {
     if (active === "myDuties") return <MyDuties user={current} />;
     if (active === "attendance") return <AttendanceCards key={current.id} user={current} />;    
         if (active === "stats" || active === "allStats") return <Statistics key={current.id + active} user={current} />;
+        if (active === "substitutions") return <Substitutions key={current.id} user={current} />;
+        if (active === "schedule") return <ManageSchedule key={current.id} user={current} />;
+        if (active === "dutyTypes") return <DutyTypes key={current.id} />;
     return <ComingSoon id={active} />;
   }
 

@@ -29,11 +29,29 @@ export interface Duty {
 }
 
 export type AttendanceStatus = "present" | "late" | "absent";
-export type CardStatus = AttendanceStatus | "unmarked";
+export type SubStatus = AttendanceStatus | "unmarked";
+export type CardStatus = AttendanceStatus | "unmarked" | "substituted";
 
 export interface AttendanceRecord {
   id: number;
   dutyId: number;
   date: string; // "2026-10-06"
   status: AttendanceStatus;
+}
+
+export interface EmergencyReport {
+  id: number;
+  userId: number; // the teacher who cannot attend
+  date: string;
+  message: string;
+  status: "open" | "handled";
+}
+
+export interface Substitution {
+  id: number;
+  dutyId: number; // the duty that is covered
+  date: string;
+  substituteId: number; // the teacher who covers it
+  reason: string;
+  status: SubStatus; // the substitute's own attendance
 }

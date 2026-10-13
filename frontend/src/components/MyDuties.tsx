@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
-import { getDutyTypes, getMyDuties } from "../api";
+import { dateOfDay, getDutyTypes, getMyDuties, getMySubstituteDuties, hasEmergency, reportEmergency } from "../api";
+import type { SubstituteDuty } from "../api";
 import type { Duty, DutyTypeInfo, User } from "../types";
 import MyAttendance from "./MyAttendance";
 
@@ -16,6 +17,8 @@ const cell: CSSProperties = {
 export default function MyDuties({ user }: { user: User }) {
   const [duties, setDuties] = useState<Duty[]>([]);
   const [types, setTypes] = useState<DutyTypeInfo[]>([]);
+  const [covers, setCovers] = useState<SubstituteDuty[]>([]);
+  const [reported, setReported] = useState(false);
   const [today, setToday] = useState(() => {
     const d = new Date().getDay(); // 0 = Sunday
     return d <= 4 ? d : 3; // on Friday or Saturday, pretend it is Wednesday
@@ -23,11 +26,21 @@ export default function MyDuties({ user }: { user: User }) {
 
   useEffect(() => {
     getMyDuties(user.id).then(setDuties);
+    getMySubstituteDuties(user.id).then(setCovers);
   }, [user.id]);
 
   useEffect(() => {
     getDutyTypes().then(setTypes);
   }, []);
+
+  useEffect(() => {
+    hasEmergency(user.id, dateOfDay(today)).then(setReported);
+  }, [user.id, today]);
+
+  async function report() {
+    await reportEmergency(user.id, dateOfDay(today), "Emergency");
+    setReported(true);
+  }
 
   const byTime = (a: Duty, b: Duty) => a.start.localeCompare(b.start);
   const typeName = (code: string) => types.find((t) => t.code === code)?.name ?? code;
@@ -53,7 +66,22 @@ export default function MyDuties({ user }: { user: User }) {
           Permission and partial leave are not allowed on a duty day. If you have an emergency,
           press Report an emergency and your supervisor will arrange a substitute.
           <br />
-          <button onClick={() => alert("Emergency report sent (demo).")}>Report an emergency</button>
+          {reported ? (
+            <b style={{ color: "#1f7a4d" }}>Emergency reported. Your supervisor has been notified.</b>
+          ) : (
+            <button onClick={report}>Report an emergency</button>
+          )}
+        </div>
+      )}
+
+      {covers.length > 0 && (
+        <div style={{ background: "#f3ecfa", border: "1px solid #7a4fb0", padding: 12, borderRadius: 8, margin: "16px 0" }}>
+          <b>You were asked to substitute:</b>
+          {covers.map(({ substitution, duty }) => (
+            <div key={substitution.id}>
+              {substitution.date}: {typeName(duty.type)} at {duty.place} ({duty.stage}, {duty.start} to {duty.end})
+            </div>
+          ))}
         </div>
       )}
 

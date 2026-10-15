@@ -1,7 +1,6 @@
 import type { AttendanceRecord, Duty, DutyTypeInfo, EmergencyReport, StageName, Substitution, User } from "../types";
 
-export const stages: StageName[] = ["Foundation", "Elementary", "Middle", "High"];
-
+export const stages: StageName[] = ["Foundation", "Elementary", "Middle & High"];
 export const dutyTypes: DutyTypeInfo[] = [
   { code: "snack", name: "Snack", colour: "#2f6fb5", weight: 1 },
   { code: "break", name: "Break", colour: "#c9820a", weight: 1 },
@@ -31,11 +30,11 @@ export const duties: Duty[] = [
   { id: 6, userId: 1, stage: "Elementary", type: "dismissal", place: "Basketball", day: 1, start: "14:20", end: "14:35" },
   { id: 7, userId: 1, stage: "Elementary", type: "dismissal", place: "Gate 7", day: 2, start: "14:20", end: "14:35" },
   { id: 8, userId: 1, stage: "Elementary", type: "snack", place: "Basketball Field", day: 4, start: "09:05", end: "09:20" },
-  { id: 9, userId: 1, stage: "Middle", type: "break", place: "Soccer Field", day: 0, start: "13:10", end: "13:40" },
-  { id: 10, userId: 1, stage: "Middle", type: "break", place: "Rainbow Lane", day: 1, start: "13:10", end: "13:40" },
-  { id: 11, userId: 1, stage: "Middle", type: "break", place: "Cafeteria", day: 2, start: "13:10", end: "13:40" },
-  { id: 12, userId: 1, stage: "Middle", type: "dismissal", place: "Garage", day: 3, start: "14:40", end: "14:55" },
-  { id: 13, userId: 1, stage: "Middle", type: "dismissal", place: "Gate 7", day: 4, start: "14:40", end: "14:55" },
+  { id: 9, userId: 1, stage: "Middle & High", type: "break", place: "Soccer Field", day: 0, start: "13:10", end: "13:40" },
+  { id: 10, userId: 1, stage: "Middle & High", type: "break", place: "Rainbow Lane", day: 1, start: "13:10", end: "13:40" },
+  { id: 11, userId: 1, stage: "Middle & High", type: "break", place: "Cafeteria", day: 2, start: "13:10", end: "13:40" },
+  { id: 12, userId: 1, stage: "Middle & High", type: "dismissal", place: "Garage", day: 3, start: "14:40", end: "14:55" },
+  { id: 13, userId: 1, stage: "Middle & High", type: "dismissal", place: "Gate 7", day: 4, start: "14:40", end: "14:55" },
   // Elementary break on Wednesday: other teachers
   { id: 14, userId: 5, stage: "Elementary", type: "break", place: "Soccer Field", day: 3, start: "12:35", end: "13:05" },
   { id: 15, userId: 6, stage: "Elementary", type: "break", place: "Basketball Field", day: 3, start: "12:35", end: "13:05" },

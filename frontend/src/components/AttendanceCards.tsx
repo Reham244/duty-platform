@@ -22,10 +22,12 @@ const chip = (text: string, colour: string) => (
 );
 
 export default function AttendanceCards({ user }: { user: User }) {
+  // Supervisors and admins can see every stage at once. A head of stage is locked to their own.
+  const canSeeAll = user.role === "admin" || user.role === "supervisor";
+
   const [stages, setStages] = useState<StageName[]>([]);
   const [types, setTypes] = useState<DutyTypeInfo[]>([]);
-  // A head of stage starts on their own stage; others start on Elementary.
-  const [stage, setStage] = useState<StageName>(user.homeStage ?? "Elementary");
+  const [stage, setStage] = useState<StageName | "all">(canSeeAll ? "all" : (user.homeStage ?? "Elementary"));
   const [date, setDate] = useState("2026-10-07"); // a Wednesday, for the demo
   const [cards, setCards] = useState<Card[]>([]);
 
@@ -84,11 +86,12 @@ export default function AttendanceCards({ user }: { user: User }) {
           Stage{" "}
           <select
             value={stage}
-            disabled={user.role === "head_of_stage"}
-            onChange={(e) => setStage(e.target.value as StageName)}
+            disabled={!canSeeAll}
+            onChange={(e) => setStage(e.target.value as StageName | "all")}
           >
+            {canSeeAll && <option value="all">All stages</option>}
             {stages.map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </label>
@@ -108,7 +111,7 @@ export default function AttendanceCards({ user }: { user: User }) {
 
       {cards.length === 0 && (
         <div style={{ background: "white", border: "1px solid #d9e0e7", borderRadius: 10, padding: 24, color: "#6b7a90", textAlign: "center" }}>
-          No duties scheduled for {stage} on this day. A supervisor can add duties in Manage schedule.
+          No duties scheduled for {stage === "all" ? "any stage" : stage} on this day. A supervisor can add duties in Manage schedule.
         </div>
       )}
 
@@ -132,6 +135,7 @@ export default function AttendanceCards({ user }: { user: User }) {
                 </div>
                 <div style={{ color: "#6b7a90", fontSize: 14 }}>
                   {chip(info?.name ?? duty.type, info?.colour ?? "#6b7a90")}
+                  {stage === "all" && <b>{duty.stage}: </b>}
                   {duty.place}, {duty.start} to {duty.end}
                   {emergency && <span style={{ marginLeft: 8 }}>{chip("Emergency reported", "#b5651d")}</span>}
                 </div>

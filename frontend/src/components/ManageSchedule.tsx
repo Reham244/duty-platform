@@ -23,11 +23,12 @@ const card: CSSProperties = {
 const field: CSSProperties = { display: "flex", flexDirection: "column", gap: 4, fontSize: 13, color: "#6b7a90" };
 
 export default function ManageSchedule({ user }: { user: User }) {
-  // A head of stage can only work on their own stage.
-  const locked = user.role === "head_of_stage";
+  // Supervisors and admins can see every stage at once. A head of stage is locked to their own.
+  const canSeeAll = user.role === "admin" || user.role === "supervisor";
 
   const [stages, setStages] = useState<StageName[]>([]);
-  const [stage, setStage] = useState<StageName>(user.homeStage ?? "Elementary");
+  const [stage, setStage] = useState<StageName | "all">(canSeeAll ? "all" : (user.homeStage ?? "Elementary"));
+  const [formStage, setFormStage] = useState<StageName>("Elementary"); // used when "All stages" is shown
   const [types, setTypes] = useState<DutyTypeInfo[]>([]);
   const [people, setPeople] = useState<User[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
@@ -51,6 +52,7 @@ export default function ManageSchedule({ user }: { user: User }) {
     getStageDuties(stage).then(setDuties);
   }, [stage, version]);
 
+  const targetStage: StageName = stage === "all" ? formStage : stage;
   const teachers = people.filter((u) => u.role === "teacher");
   const chosenType = typeCode || types[0]?.code || "";
   const chosenTeacher = teacherId || teachers[0]?.id || 0;
@@ -61,7 +63,7 @@ export default function ManageSchedule({ user }: { user: User }) {
   ];
 
   async function save() {
-    const error = await addDuty({ stage, type: chosenType, place, day, start, end, userId: chosenTeacher });
+    const error = await addDuty({ stage: targetStage, type: chosenType, place, day, start, end, userId: chosenTeacher });
     if (error) {
       setMessage({ text: error, ok: false });
       return;
@@ -85,21 +87,32 @@ export default function ManageSchedule({ user }: { user: User }) {
         Stage{" "}
         <select
           value={stage}
-          disabled={locked}
+          disabled={!canSeeAll}
           onChange={(e) => {
-            setStage(e.target.value as StageName);
+            setStage(e.target.value as StageName | "all");
             setMessage(null);
           }}
         >
+          {canSeeAll && <option value="all">All stages</option>}
           {stages.map((s) => (
-            <option key={s}>{s}</option>
+            <option key={s} value={s}>{s}</option>
           ))}
         </select>
       </label>
 
       <div style={{ ...card, marginTop: 16 }}>
-        <b>Add a duty to {stage}</b>
+        <b>Add a duty to {targetStage}</b>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 10, alignItems: "flex-end" }}>
+          {stage === "all" && (
+            <label style={field}>
+              Stage
+              <select value={formStage} onChange={(e) => setFormStage(e.target.value as StageName)}>
+                {stages.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label style={field}>
             Duty type
             <select value={chosenType} onChange={(e) => setTypeCode(e.target.value)}>
@@ -150,7 +163,7 @@ export default function ManageSchedule({ user }: { user: User }) {
 
       {duties.length === 0 ? (
         <div style={{ ...card, textAlign: "center", color: "#6b7a90" }}>
-          No duties scheduled for {stage} yet. Use the form above to add the first one.
+          No duties scheduled for {stage === "all" ? "any stage" : stage} yet. Use the form above to add the first one.
         </div>
       ) : (
         <>
@@ -179,7 +192,10 @@ export default function ManageSchedule({ user }: { user: User }) {
                           <DutyBlock key={d.id} colour={t.colour}>
                             <b>{nameOf(d.userId)}</b>
                             <br />
-                            <small>{d.place}, {d.start} to {d.end}</small>{" "}
+                            <small>
+                              {stage === "all" && <b>{d.stage}: </b>}
+                              {d.place}, {d.start} to {d.end}
+                            </small>{" "}
                             <button onClick={() => remove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
                           </DutyBlock>
                         ))}

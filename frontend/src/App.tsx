@@ -10,6 +10,7 @@ import Statistics from "./components/Statistics";
 import Substitutions from "./components/Substitutions";
 import ManageSchedule from "./components/ManageSchedule";
 import DutyTypes from "./components/DutyTypes";
+import StaffRoles from "./components/StaffRoles";
 import ComingSoon from "./components/ComingSoon";
 
 // Chooses which screen to show for the person and the menu item.
@@ -20,6 +21,7 @@ function ScreenView({ user, screen }: { user: User; screen: ScreenId }) {
   if (screen === "substitutions") return <Substitutions user={user} />;
   if (screen === "schedule") return <ManageSchedule user={user} />;
   if (screen === "dutyTypes") return <DutyTypes />;
+  if (screen === "users") return <StaffRoles user={user} />;
   return <ComingSoon id={screen} />;
 }
 
@@ -34,6 +36,11 @@ function App() {
       setCurrentId(list[0]?.id ?? null);
     });
   }, []);
+
+  // Reload the list when the screen changes, so a role change shows in the "view as" list.
+  useEffect(() => {
+    getUsers().then(setUsers);
+  }, [screen, currentId]);
 
   const current = users.find((u) => u.id === currentId);
   const menu: ScreenId[] = current ? menuByRole[current.role] : [];

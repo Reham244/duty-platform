@@ -1,15 +1,8 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { screens } from "../roles";
+import { roleLabels, screens } from "../roles";
 import type { ScreenId } from "../roles";
-import type { Role, User } from "../types";
-
-const roleLabels: Record<Role, string> = {
-  teacher: "Teacher",
-  supervisor: "Supervisor",
-  head_of_stage: "Head of stage",
-  admin: "Admin",
-};
+import type { User } from "../types";
 
 interface LayoutProps {
   users: User[];

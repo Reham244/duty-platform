@@ -36,7 +36,7 @@ export function dutyHours(d: Duty): number {
 
 // ---------- Lists ----------
 export async function getUsers(): Promise<User[]> {
-  return users;
+  return [...users];
 }
 
 export async function getStages(): Promise<StageName[]> {
@@ -98,9 +98,9 @@ export interface Card {
   substitution?: { id: number; person: User; status: SubStatus };
 }
 
-export async function getCards(stage: StageName, day: number, date: string): Promise<Card[]> {
+export async function getCards(stage: StageName | "all", day: number, date: string): Promise<Card[]> {
   return duties
-    .filter((d) => d.stage === stage && d.day === day)
+    .filter((d) => (stage === "all" || d.stage === stage) && d.day === day)
     .sort(byTime)
     .map((d) => {
       const sub = substitutions.find((s) => s.dutyId === d.id && s.date === date);
@@ -282,8 +282,8 @@ export async function getStats(stage: StageName | "all", from: string, to: strin
 }
 
 // ---------- Manage schedule ----------
-export async function getStageDuties(stage: StageName): Promise<Duty[]> {
-  return duties.filter((d) => d.stage === stage);
+export async function getStageDuties(stage: StageName | "all"): Promise<Duty[]> {
+  return duties.filter((d) => stage === "all" || d.stage === stage);
 }
 
 export interface NewDuty {

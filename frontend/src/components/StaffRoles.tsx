@@ -8,7 +8,7 @@ import type { Role, StageName, User } from "../types";
 const cell: CSSProperties = { border: "1px solid #d9e0e7", padding: 8, textAlign: "left", background: "white" };
 const roleOrder: Role[] = ["teacher", "supervisor", "head_of_stage", "matron", "hr", "admin"];
 
-export default function StaffRoles({ user }: { user: User }) {
+export default function StaffRoles() {
   const [people, setPeople] = useState<User[]>([]);
   const [stages, setStages] = useState<StageName[]>([]);
   const [search, setSearch] = useState("");
@@ -34,8 +34,8 @@ export default function StaffRoles({ user }: { user: User }) {
   const count = (r: Role) => people.filter((p) => p.role === r).length;
 
   async function save(p: User, role: Role, stage: StageName | undefined) {
-    const error = await setUserRole(p.id, role, stage, user.id);
-    setMessage(
+    const error = await setUserRole(p.id, role, stage);
+      setMessage(
       error ? { text: error, ok: false } : { text: `${p.fullName} is now ${roleLabels[role]}.`, ok: true },
     );
     setVersion((v) => v + 1);

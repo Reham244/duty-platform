@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
-import { getMyAttendance } from "../api";
+import { getMyAttendance, getMySubstitutionSummary } from "../api";
 import type { AttendanceRow } from "../api";
-import type { AttendanceStatus, User } from "../types";
+import type { AttendanceStatus, SubstitutionSummary, User } from "../types";
 
 const colours: Record<AttendanceStatus, string> = {
   present: "#1f7a4d",
@@ -14,8 +14,15 @@ const labels: Record<AttendanceStatus, string> = {
   late: "Late",
   absent: "Missed",
 };
+const purple = "#7a4fb0";
 
 const cell: CSSProperties = { border: "1px solid #d9e0e7", padding: 8, textAlign: "left" };
+
+const chip = (text: string) => (
+  <span style={{ background: purple, color: "white", padding: "2px 8px", borderRadius: 6, fontSize: 12, fontWeight: 700, marginRight: 8 }}>
+    {text}
+  </span>
+);
 
 function useRows(userId: number) {
   const [rows, setRows] = useState<AttendanceRow[]>([]);
@@ -25,10 +32,18 @@ function useRows(userId: number) {
   return rows;
 }
 
-// The four boxes: on time, late, missed and the rate. Shown at the top of My duties.
+// The boxes at the top of My duties.
 export function AttendanceSummary({ user }: { user: User }) {
   const rows = useRows(user.id);
-  const count = (s: AttendanceStatus) => rows.filter((r) => r.record.status === s).length;
+  const [subs, setSubs] = useState<SubstitutionSummary>({ covered: 0, excused: 0 });
+
+  useEffect(() => {
+    getMySubstitutionSummary(user.id).then(setSubs);
+  }, [user.id]);
+
+  // Excused duties are not counted as on time, late or missed.
+  const marked = rows.filter((r) => r.status !== "excused");
+  const count = (s: AttendanceStatus) => marked.filter((r) => r.status === s).length;
   const present = count("present");
   const late = count("late");
   const absent = count("absent");
@@ -36,23 +51,31 @@ export function AttendanceSummary({ user }: { user: User }) {
   const rate = total === 0 ? 0 : Math.round((present / total) * 100);
 
   const box = (label: string, value: string, colour: string) => (
-    <div style={{ flex: 1, minWidth: 140, border: "1px solid #d9e0e7", borderRadius: 10, padding: 12, background: "white" }}>
+    <div style={{ flex: 1, minWidth: 130, border: "1px solid #d9e0e7", borderRadius: 10, padding: 12, background: "white" }}>
       <div style={{ color: "#6b7a90", fontSize: 13 }}>{label}</div>
       <div style={{ fontSize: 30, fontWeight: 700, color: colour }}>{value}</div>
     </div>
   );
 
   return (
-    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "16px 0" }}>
-      {box("On time", String(present), colours.present)}
-      {box("Late", String(late), colours.late)}
-      {box("Missed", String(absent), colours.absent)}
-      {box("Attendance rate", `${rate}%`, "#1b6fd1")}
+    <div style={{ margin: "16px 0" }}>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {box("On time", String(present), colours.present)}
+        {box("Late", String(late), colours.late)}
+        {box("Missed", String(absent), colours.absent)}
+        {box("Attendance rate", `${rate}%`, "#1b6fd1")}
+        {box("Excused", String(subs.excused), purple)}
+        {box("Substitute", String(subs.covered), purple)}
+      </div>
+      <p style={{ color: "#6b7a90", fontSize: 13, marginBottom: 0 }}>
+        Excused: your duties that someone else covered (not counted as missed).
+        Substitute: duties you took for another teacher (counted in your numbers).
+      </p>
     </div>
   );
 }
 
-// The history table. Shown at the bottom of My duties.
+// The history table at the bottom of My duties.
 export default function MyAttendance({ user }: { user: User }) {
   const rows = useRows(user.id);
 
@@ -69,13 +92,17 @@ export default function MyAttendance({ user }: { user: User }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ record, duty }) => (
-            <tr key={record.id}>
-              <td style={cell}>{record.date}</td>
-              <td style={cell}>{duty.type}</td>
-              <td style={cell}>{duty.place} ({duty.stage})</td>
-              <td style={{ ...cell, color: colours[record.status], fontWeight: 700 }}>
-                {labels[record.status]}
+          {rows.map((r) => (
+            <tr key={r.id}>
+              <td style={cell}>{r.date}</td>
+              <td style={cell}>{r.duty.type}</td>
+              <td style={cell}>{r.duty.place} ({r.duty.stage})</td>
+              <td style={cell}>
+                {r.kind === "excused" && chip("Excused")}
+                {r.kind === "substitute" && chip("Substitute")}
+                {r.status !== "excused" && (
+                  <b style={{ color: colours[r.status] }}>{labels[r.status]}</b>
+                )}
               </td>
             </tr>
           ))}

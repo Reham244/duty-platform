@@ -11,10 +11,11 @@ interface LayoutProps {
   menu: ScreenId[];
   active: ScreenId;
   onSelect: (id: ScreenId) => void;
+  unread: number;
   children: ReactNode;
 }
 
-export default function Layout({ users, current, onUserChange, menu, active, onSelect, children }: LayoutProps) {
+export default function Layout({ users, current, onUserChange, menu, active, onSelect, unread, children }: LayoutProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -43,6 +44,7 @@ export default function Layout({ users, current, onUserChange, menu, active, onS
             }}
           >
             {screens[id].title}
+            {id === "notifications" && unread > 0 && ` (${unread})`}
             {!screens[id].ready && " (soon)"}
           </button>
         ))}
@@ -62,6 +64,10 @@ export default function Layout({ users, current, onUserChange, menu, active, onS
                 ))}
               </select>
             </label>
+            <button className="bell" onClick={() => onSelect("notifications")} aria-label="Notifications" title="Notifications">
+              🔔
+              {unread > 0 && <span className="badge">{unread}</span>}
+            </button>
             <span className="avatar" />
             <span>Hi, {current.fullName}</span>
           </div>

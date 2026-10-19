@@ -2,17 +2,11 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { addDuty, deleteDuty, getDutyTypes, getStageDuties, getStages, getUsers } from "../api";
 import type { Duty, DutyTypeInfo, StageName, User } from "../types";
-import { DutyBlock, Legend } from "./DutyBlock";
+import { Legend } from "./DutyBlock";
+import WeekTable from "./WeekTable";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
-const cell: CSSProperties = {
-  border: "1px solid #d9e0e7",
-  padding: 8,
-  verticalAlign: "top",
-  textAlign: "left",
-  background: "white",
-};
 const card: CSSProperties = {
   background: "white",
   border: "1px solid #d9e0e7",
@@ -57,7 +51,6 @@ export default function ManageSchedule({ user }: { user: User }) {
   const chosenType = typeCode || types[0]?.code || "";
   const chosenTeacher = teacherId || teachers[0]?.id || 0;
   const nameOf = (id: number) => people.find((u) => u.id === id)?.fullName ?? "?";
-  const byTime = (a: Duty, b: Duty) => a.start.localeCompare(b.start);
   const places = [
     ...new Set([...duties.map((d) => d.place), "Soccer Field", "Basketball Field", "Rainbow Lane", "Cafeteria", "Garage", "Gate 7"]),
   ];
@@ -168,43 +161,22 @@ export default function ManageSchedule({ user }: { user: User }) {
       ) : (
         <>
           <Legend types={types} />
-          <table style={{ borderCollapse: "collapse", width: "100%" }}>
-            <thead>
-              <tr>
-                <th style={cell}>Duty</th>
-                {days.map((n) => (
-                  <th key={n} style={cell}>{n}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {types.map((t) => (
-                <tr key={t.code}>
-                  <td style={{ ...cell, borderLeft: `6px solid ${t.colour}` }}>
-                    <b>{t.name}</b>
-                  </td>
-                  {days.map((n, i) => (
-                    <td key={n} style={cell}>
-                      {duties
-                        .filter((d) => d.type === t.code && d.day === i)
-                        .sort(byTime)
-                        .map((d) => (
-                          <DutyBlock key={d.id} colour={t.colour}>
-                            <b>{nameOf(d.userId)}</b>
-                            <br />
-                            <small>
-                              {stage === "all" && <b>{d.stage}: </b>}
-                              {d.place}, {d.start} to {d.end}
-                            </small>{" "}
-                            <button onClick={() => remove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
-                          </DutyBlock>
-                        ))}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <WeekTable
+            duties={duties}
+            types={types}
+            stage={stage === "all" ? undefined : stage}
+            detail={(d) => (
+              <>
+                <b>{nameOf(d.userId)}</b>
+                <br />
+                <small>
+                  {stage === "all" && <b>{d.stage}: </b>}
+                  {d.place}, {d.start} to {d.end}
+                </small>{" "}
+                <button onClick={() => remove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
+              </>
+            )}
+          />
         </>
       )}
       <p style={{ color: "#6b7a90", fontSize: 13 }}>

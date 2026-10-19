@@ -5,13 +5,20 @@ import type { Role, StageName, User } from "./types.js";
 // Reads the x-user-id header and finds the person. Real sign-in replaces this later.
 export function loadUser(req: Request, res: Response, next: NextFunction): void {
   const id = Number(req.header("x-user-id"));
-  const user = Number.isFinite(id) ? findUser(id) : undefined;
-  if (!user) {
+  if (!Number.isInteger(id) || id <= 0) {
     res.status(401).json({ error: "Unknown user. Send the x-user-id header." });
     return;
   }
-  res.locals.user = user;
-  next();
+  findUser(id)
+    .then((user) => {
+      if (!user) {
+        res.status(401).json({ error: "Unknown user. Send the x-user-id header." });
+        return;
+      }
+      res.locals.user = user;
+      next();
+    })
+    .catch(next);
 }
 
 export const currentUser = (res: Response): User => res.locals.user as User;

@@ -238,3 +238,21 @@ th {
     z-index: 9;
   }
 }
+
+/* ---------- Notification bell ---------- */
+.bell {
+  position: relative;
+  font-size: 18px;
+  padding: 4px 10px;
+}
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #a63a2b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 6px;
+}

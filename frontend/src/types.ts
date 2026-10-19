@@ -61,9 +61,14 @@ export interface Substitution {
   reason: string;
   status: SubStatus; // the substitute's own attendance
 }
-// ---------- Shapes sent between the screens and the server ----------
+export type HistoryKind = "own" | "excused" | "substitute";
+
+// One line of a teacher's history: an own duty, an excused duty, or a duty done as a substitute.
 export interface AttendanceRow {
-  record: AttendanceRecord;
+  id: string;
+  date: string;
+  status: AttendanceStatus | "excused";
+  kind: HistoryKind;
   duty: Duty;
 }
 
@@ -106,6 +111,8 @@ export interface StatsRow {
   marked: number; // present + late + absent
   rate: number; // present / marked, in percent
   hours: number; // hours on duty (present and late)
+  covered: number;
+  excused: number;
 }
 
 export interface NewDuty {
@@ -116,4 +123,23 @@ export interface NewDuty {
   start: string;
   end: string;
   userId: number;
+}
+export interface SubstitutionSummary {
+  covered: number;
+  excused: number;
+}
+
+export interface AppNotification {
+  id: number;
+  kind: string; // duty-reminder, substitution, excused
+  title: string;
+  body: string;
+  createdAt: string;
+  read: boolean;
+  fromName: string | null;
+}
+
+export interface Coverage {
+  expected: number; // scheduled duties in the period
+  recorded: number; // duties with an attendance mark
 }

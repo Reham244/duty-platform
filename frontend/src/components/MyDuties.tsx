@@ -1,19 +1,12 @@
 import { useEffect, useState } from "react";
-import type { CSSProperties } from "react";
 import { dateOfDay, getDutyTypes, getMyDuties, getMySubstituteDuties, hasEmergency, reportEmergency } from "../api";
 import type { SubstituteDuty } from "../api";
 import type { Duty, DutyTypeInfo, User } from "../types";
 import MyAttendance, { AttendanceSummary } from "./MyAttendance";
-import { DutyBlock, Legend } from "./DutyBlock";
+import { Legend } from "./DutyBlock";
+import WeekTable from "./WeekTable";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
-
-const cell: CSSProperties = {
-  border: "1px solid #d9e0e7",
-  padding: 8,
-  verticalAlign: "top",
-  textAlign: "left",
-};
 
 export default function MyDuties({ user }: { user: User }) {
   const [duties, setDuties] = useState<Duty[]>([]);
@@ -91,41 +84,20 @@ export default function MyDuties({ user }: { user: User }) {
 
       <Legend types={types} />
 
-      <table style={{ borderCollapse: "collapse", width: "100%" }}>
-        <thead>
-          <tr>
-            <th style={cell}>Duty</th>
-            {days.map((name) => (
-              <th key={name} style={cell}>{name}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {types.map((t) => (
-            <tr key={t.code}>
-              <td style={{ ...cell, borderLeft: `6px solid ${t.colour}`, background: "white" }}>
-                <b>{t.name}</b>
-              </td>
-              {days.map((name, dayIndex) => (
-                <td key={name} style={{ ...cell, background: dayIndex === today ? "#eaf3ff" : "white" }}>
-                  {duties
-                    .filter((d) => d.type === t.code && d.day === dayIndex)
-                    .sort(byTime)
-                    .map((d) => (
-                      <DutyBlock key={d.id} colour={t.colour}>
-                        <b>{d.place}</b>
-                        <br />
-                        <small>{d.stage}, {d.start} to {d.end}</small>
-                      </DutyBlock>
-                    ))}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <WeekTable
+        duties={duties}
+        types={types}
+        highlightDay={today}
+        detail={(d) => (
+          <>
+            <b>{d.place}</b>
+            <br />
+            <small>{d.stage}, {d.start} to {d.end}</small>
+          </>
+        )}
+      />
 
       <MyAttendance user={user} />
     </div>
   );
-} 
+}

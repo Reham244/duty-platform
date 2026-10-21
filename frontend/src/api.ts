@@ -1,6 +1,6 @@
 import type {
-  AttendanceRow, AttendanceStatus, Candidate, Card, Duty, DutyTypeInfo, NeedRow, NewDuty,
-  StageName, StatsRow, SubRow, SubstituteDuty, SubstitutionSummary, User, AppNotification, Coverage,
+  AppNotification, AttendanceRow, AttendanceStatus, Candidate, Card, Coverage, Duty, DutyTypeInfo, NeedRow,
+  NewDuty, StageName, StatsRow, SubRow, SubstituteDuty, SubstitutionSummary, User,
 } from "./types";
 
 // The screens keep importing these shapes from here.
@@ -24,9 +24,12 @@ export function setNotifiers(error: (message: string) => void, busy: (busy: bool
   onBusy = busy;
 }
 
+// quiet = true for background requests: no loading bar and no error banner.
 async function request<T>(path: string, options: RequestInit = {}, quiet = false): Promise<T> {
-  pending += 1;
-  onBusy(true);
+  if (!quiet) {
+    pending += 1;
+    onBusy(true);
+  }
   try {
     const res = await fetch(BASE + path, {
       ...options,
@@ -44,9 +47,11 @@ async function request<T>(path: string, options: RequestInit = {}, quiet = false
           : "Something went wrong.";
     if (!quiet) onError(message);
     throw new Error(message, { cause: e });
-  } finally {
-    pending -= 1;
-    if (pending === 0) onBusy(false);
+    } finally {
+    if (!quiet) {
+      pending -= 1;
+      if (pending === 0) onBusy(false);
+    }
   }
 }
 
@@ -77,7 +82,7 @@ export function dateOfDay(day: number): string {
 }
 
 // ---------- Lists ----------
-export const getUsers = () => request<User[]>("/users");
+export const getUsers = (quiet = false) => request<User[]>("/users", {}, quiet);
 export const getStages = () => request<StageName[]>("/stages");
 export const getDutyTypes = () => request<DutyTypeInfo[]>("/duty-types");
 
@@ -86,6 +91,8 @@ export const getMyDuties = (userId: number) => request<Duty[]>(`/users/${userId}
 export const getMyAttendance = (userId: number) => request<AttendanceRow[]>(`/users/${userId}/attendance`);
 export const getMySubstituteDuties = (userId: number) =>
   request<SubstituteDuty[]>(`/users/${userId}/substitute-duties`);
+export const getMySubstitutionSummary = (userId: number) =>
+  request<SubstitutionSummary>(`/users/${userId}/substitution-summary`);
 
 export async function hasEmergency(userId: number, date: string): Promise<boolean> {
   const r = await request<{ reported: boolean }>(`/users/${userId}/emergency?` + query({ date }));
@@ -125,6 +132,9 @@ export const getSubstitutionsOn = (date: string, stage: StageName | "all") =>
 export const getStats = (stage: StageName | "all", from: string, to: string) =>
   request<StatsRow[]>("/stats?" + query({ stage, from, to }));
 
+export const getStatsCoverage = (stage: StageName | "all", from: string, to: string) =>
+  request<Coverage>("/stats/coverage?" + query({ stage, from, to }));
+
 // ---------- Manage schedule ----------
 export const getStageDuties = (stage: StageName | "all") =>
   request<Duty[]>("/schedule?" + query({ stage }));
@@ -138,18 +148,12 @@ export const getDutyTypeCounts = () => request<Record<string, number>>("/duty-ty
 
 export const addDutyType = (name: string, colour: string, weight: number) =>
   attempt("/duty-types", json("POST", { name, colour, weight }));
-export const getMySubstitutionSummary = (userId: number) =>
-  request<SubstitutionSummary>(`/users/${userId}/substitution-summary`);
-
-// ---------- Statistics: data completeness ----------
-export const getStatsCoverage = (stage: StageName | "all", from: string, to: string) =>
-  request<Coverage>("/stats/coverage?" + query({ stage, from, to }));
 
 // ---------- Notifications ----------
 export const getNotifications = () => request<AppNotification[]>("/notifications");
 
 export async function getUnreadCount(): Promise<number> {
-  const r = await request<{ count: number }>("/notifications/unread-count");
+  const r = await request<{ count: number }>("/notifications/unread-count", {}, true);
   return r.count;
 }
 

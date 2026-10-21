@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getUnreadCount, getUsers, setCurrentUser } from "./api";
+import { getUnreadCount, getUsers, setCurrentUser, setNotifiers } from "./api";
 import { menuByRole } from "./roles";
 import type { ScreenId } from "./roles";
 import type { User } from "./types";
@@ -33,9 +33,16 @@ function App() {
   const [screen, setScreen] = useState<ScreenId>("myDuties");
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  // Connect the loading bar and the error banner to the data layer. This must come first.
+  useEffect(() => {
+    setNotifiers(setNotice, setBusy);
+  }, []);
 
   useEffect(() => {
-    getUsers()
+    getUsers(true)
       .then((list) => {
         setUsers(list);
         if (list[0]) {
@@ -48,7 +55,7 @@ function App() {
 
   // Reload the list when the screen changes, so a role change shows in the "view as" list.
   useEffect(() => {
-    getUsers()
+    getUsers(true)
       .then(setUsers)
       .catch(() => undefined);
   }, [screen, currentId]);
@@ -68,6 +75,7 @@ function App() {
   }, [currentId, screen, refreshUnread]);
 
   function chooseUser(id: number) {
+    setNotice("");
     setCurrentUser(id); // tell the server who is asking, before the new screen loads its data
     setCurrentId(id);
   }
@@ -87,9 +95,32 @@ function App() {
       onUserChange={chooseUser}
       menu={menu}
       active={active}
-      onSelect={setScreen}
+      onSelect={(id) => {
+        setNotice("");
+        setScreen(id);
+      }}
       unread={unread}
     >
+      {busy && <div className="loading-bar" />}
+      {notice && (
+        <div
+          style={{
+            background: "#fbe3df",
+            border: "1px solid #a63a2b",
+            color: "#a63a2b",
+            padding: 12,
+            borderRadius: 8,
+            marginBottom: 12,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <span>{notice}</span>
+          <button onClick={() => setNotice("")}>Close</button>
+        </div>
+      )}
       <ScreenView
         key={`${current.id}-${active}`}
         user={current}

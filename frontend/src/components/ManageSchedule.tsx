@@ -3,7 +3,8 @@ import type { CSSProperties } from "react";
 import { addDuty, deleteDuty, getDutyTypes, getStageDuties, getStages, getUsers } from "../api";
 import type { Duty, DutyTypeInfo, StageName, User } from "../types";
 import { Legend } from "./DutyBlock";
-import WeekTable from "./WeekTable";
+import DayAgenda from "./DayAgenda";
+import TeacherGrid from "./TeacherGrid";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
@@ -27,6 +28,7 @@ export default function ManageSchedule({ user }: { user: User }) {
   const [people, setPeople] = useState<User[]>([]);
   const [duties, setDuties] = useState<Duty[]>([]);
   const [version, setVersion] = useState(0);
+  const [view, setView] = useState<"day" | "teacher">("day");
 
   const [typeCode, setTypeCode] = useState("");
   const [place, setPlace] = useState("");
@@ -71,6 +73,23 @@ export default function ManageSchedule({ user }: { user: User }) {
     setMessage(error ? { text: error, ok: false } : { text: "Duty removed.", ok: true });
     setVersion((v) => v + 1);
   }
+
+  const viewButton = (id: "day" | "teacher", label: string) => (
+    <button
+      onClick={() => setView(id)}
+      style={{
+        padding: "7px 14px",
+        borderRadius: 8,
+        border: "1px solid #d9e0e7",
+        background: view === id ? "#0f4c8a" : "white",
+        color: view === id ? "white" : "#1f2d3d",
+        fontWeight: view === id ? 700 : 400,
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <div>
@@ -160,23 +179,30 @@ export default function ManageSchedule({ user }: { user: User }) {
         </div>
       ) : (
         <>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+            <b>View</b>
+            {viewButton("day", "By day")}
+            {viewButton("teacher", "By teacher")}
+          </div>
           <Legend types={types} />
-          <WeekTable
-            duties={duties}
-            types={types}
-            stage={stage === "all" ? undefined : stage}
-            detail={(d) => (
-              <>
-                <b>{nameOf(d.userId)}</b>
-                <br />
-                <small>
-                  {stage === "all" && <b>{d.stage}: </b>}
-                  {d.place}, {d.start} to {d.end}
-                </small>{" "}
-                <button onClick={() => remove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
-              </>
-            )}
-          />
+
+          {view === "day" ? (
+            <DayAgenda
+              duties={duties}
+              types={types}
+              showStage={stage === "all"}
+              detail={(d) => (
+                <>
+                  <b>{nameOf(d.userId)}</b>
+                  <br />
+                  <small>{d.place}</small>{" "}
+                  <button onClick={() => remove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
+                </>
+              )}
+            />
+          ) : (
+            <TeacherGrid duties={duties} types={types} people={people} showStage={stage === "all"} onRemove={remove} />
+          )}
         </>
       )}
       <p style={{ color: "#6b7a90", fontSize: 13 }}>

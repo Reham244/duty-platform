@@ -4,7 +4,7 @@ import type { SubstituteDuty } from "../api";
 import type { Duty, DutyTypeInfo, User } from "../types";
 import MyAttendance, { AttendanceSummary } from "./MyAttendance";
 import { Legend } from "./DutyBlock";
-import WeekTable from "./WeekTable";
+import DayAgenda from "./DayAgenda";
 
 const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
@@ -84,15 +84,17 @@ export default function MyDuties({ user }: { user: User }) {
 
       <Legend types={types} />
 
-      <WeekTable
+      <DayAgenda
+        key={today}
         duties={duties}
         types={types}
-        highlightDay={today}
+        showStage
+        todayDay={today}
         detail={(d) => (
           <>
             <b>{d.place}</b>
             <br />
-            <small>{d.stage}, {d.start} to {d.end}</small>
+            <small>{d.stage}</small>
           </>
         )}
       />

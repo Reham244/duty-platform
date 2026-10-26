@@ -49,7 +49,7 @@ export default function Substitutions({ user }: { user: User }) {
   }, [picked, date]);
 
   async function report() {
-    await reportEmergency(teacherId, date, "Reported by the supervisor");
+    await reportEmergency(teacherId, date, "Requested by the supervisor");
     await refresh();
   }
 
@@ -76,20 +76,20 @@ export default function Substitutions({ user }: { user: User }) {
       </label>
 
       <div style={{ ...card, marginTop: 16 }}>
-        <b>Report an emergency for a teacher</b> <small>(for example, when they phone in)</small>
+        <b>Request a substitution for a teacher</b> <small>(for example, when they phone in)</small>
         <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
           <select value={teacherId} onChange={(e) => setTeacherId(Number(e.target.value))}>
             {teachers.map((t) => (
               <option key={t.id} value={t.id}>{t.fullName} ({t.subject})</option>
             ))}
           </select>
-          <button onClick={report}>Create emergency report</button>
+          <button onClick={report}>Create request</button>
         </div>
       </div>
 
       <div style={card}>
         <h3 style={{ marginTop: 0 }}>Duties that need a substitute</h3>
-        {needs.length === 0 && <p style={{ color: "#6b7a90" }}>No open emergency reports for this date.</p>}
+        {needs.length === 0 && <p style={{ color: "#6b7a90" }}>No open substitution requests for this date.</p>}
         {needs.map((n) => (
           <div
             key={n.duty.id}
@@ -100,7 +100,7 @@ export default function Substitutions({ user }: { user: User }) {
             }}
           >
             <div>
-              <b>{n.person.fullName}</b> ({n.person.subject}), emergency reported
+              <b>{n.person.fullName}</b> ({n.person.subject}), substitution requested
               <br />
               <small>
                 {typeName(n.duty.type)} at {n.duty.place}, {n.duty.stage}, {n.duty.start} to {n.duty.end}

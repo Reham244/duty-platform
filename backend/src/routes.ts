@@ -96,8 +96,8 @@ router.post("/emergencies", h(async (req, res) => {
   if (target !== user.id && !staffRoles.includes(user.role)) {
     return deny(res, 403, "You can only report your own emergency.");
   }
-  await s.reportEmergency(target, text(b.date), text(b.message));
-  res.json({ ok: true });
+  await s.reportEmergency(target, text(b.date), text(b.message), user.id);
+    res.json({ ok: true });
 }));
 
 // Attendance cards and marks (supervisor, head of stage, admin)
@@ -210,4 +210,15 @@ router.post("/notifications/duties", requireRole(...staffRoles), h(async (req, r
     if (duty && canTouchStage(user, duty.stage)) allowed.push(id);
   }
   res.json({ sent: await s.notifyDuties(allowed, text(b.date), user.id) });
+}));
+
+// Demo tool: run the reminder check as if it were the given date and time.
+router.post("/reminders/run", requireRole("admin"), h(async (req, res) => {
+  const b = bodyOf(req);
+  const date = text(b.date);
+  const [hh = "", mm = ""] = text(b.time).split(":");
+  const nowMinutes = Number(hh) * 60 + Number(mm);
+  if (!date || hh === "" || !Number.isFinite(nowMinutes)) return deny(res, 400, "Choose a date and a time.");
+  if (b.reset === true) await s.clearReminderLog(date);
+  res.json({ sent: await s.runReminders(date, nowMinutes, 10) });
 }));

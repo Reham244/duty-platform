@@ -170,3 +170,8 @@ export async function notifyDuties(dutyIds: number[], date: string): Promise<num
   const r = await request<{ sent: number }>("/notifications/duties", json("POST", { dutyIds, date }));
   return r.sent;
 }
+// ---------- Reminders (demo tool for the admin) ----------
+export async function runReminderCheck(date: string, time: string, reset: boolean): Promise<number> {
+  const r = await request<{ sent: number }>("/reminders/run", json("POST", { date, time, reset }));
+  return r.sent;
+}

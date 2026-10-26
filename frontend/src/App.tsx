@@ -23,7 +23,7 @@ function ScreenView({ user, screen, onNotificationsChanged }: { user: User; scre
   if (screen === "schedule") return <ManageSchedule user={user} />;
   if (screen === "dutyTypes") return <DutyTypes />;
   if (screen === "users") return <StaffRoles />;
-  if (screen === "notifications") return <Notifications onChanged={onNotificationsChanged} />;
+  if (screen === "notifications") return <Notifications user={user} onChanged={onNotificationsChanged} />;
   return <ComingSoon id={screen} />;
 }
 

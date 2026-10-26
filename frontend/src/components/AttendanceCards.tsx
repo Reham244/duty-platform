@@ -219,7 +219,7 @@ export default function AttendanceCards({ user }: { user: User }) {
                   {chip(info?.name ?? duty.type, info?.colour ?? "#6b7a90")}
                   {stage === "all" && <b>{duty.stage}: </b>}
                   {duty.place}, {duty.start} to {duty.end}
-                  {emergency && <span style={{ marginLeft: 8 }}>{chip("Emergency reported", "#b5651d")}</span>}
+                  {emergency && <span style={{ marginLeft: 8 }}>{chip("substitution requested", "#b5651d")}</span>}
                 </div>
               </div>
 

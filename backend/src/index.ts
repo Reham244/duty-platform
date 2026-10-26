@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import type { NextFunction, Request, Response } from "express";
 import { pool } from "./db.js";
+import { startReminders } from "./reminders.js";
 import { router } from "./routes.js";
 
 const app = express();
@@ -28,5 +29,8 @@ app.listen(PORT, () => {
 // Check the database connection once at the start, so a wrong password shows up immediately.
 pool
   .query("SELECT 1")
-  .then(() => console.log("Connected to MySQL"))
+  .then(() => {
+    console.log("Connected to MySQL");
+    startReminders();
+  })
   .catch((e: Error) => console.error("Cannot connect to MySQL. Check backend/.env and that MySQL is running.", e.message));

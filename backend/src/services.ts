@@ -144,12 +144,41 @@ export async function hasEmergency(userId: number, date: string): Promise<boolea
   );
   return rows.length > 0;
 }
-
-export async function reportEmergency(userId: number, date: string, message: string): Promise<void> {
+// The teacher's "Request substitution" for a day. It covers all their duties that day.
+export async function reportEmergency(userId: number, date: string, message: string, actorId: number): Promise<void> {
   if (await hasEmergency(userId, date)) return;
   await run("INSERT INTO emergency_reports (user_id, report_date, message, status) VALUES (?, ?, ?, 'open')", [
     userId, date, message,
   ]);
+
+  // Tell the people who arrange substitutes: supervisors, admins, and the head of each stage
+  // the teacher works in that day.
+  const day = weekdayOf(date);
+  const teacher = await findUser(userId);
+  const counted = await query<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM assignments a JOIN duty_slots sl ON sl.id = a.slot_id
+     WHERE a.user_id = ? AND sl.day_of_week = ?`,
+    [userId, day],
+  );
+  const duties = Number(counted[0]?.n ?? 0);
+  const recipients = await query<{ id: number }>(
+    `SELECT u.id AS id FROM users u
+     WHERE u.role IN ('supervisor', 'admin')
+        OR (u.role = 'head_of_stage' AND u.stage_id IN (
+              SELECT sl.stage_id FROM assignments a JOIN duty_slots sl ON sl.id = a.slot_id
+              WHERE a.user_id = ? AND sl.day_of_week = ?))`,
+    [userId, day],
+  );
+  for (const r of recipients) {
+    if (r.id === actorId) continue; // the person who pressed the button already knows
+    await createNotification(
+      r.id,
+      "substitution-request",
+      "Substitution requested",
+      `${teacher?.fullName ?? "A teacher"} needs a substitute on ${date} (${duties} ${duties === 1 ? "duty" : "duties"}).`,
+      actorId,
+    );
+  }
 }
 
 export async function getMySubstituteDuties(userId: number): Promise<SubstituteDuty[]> {
@@ -676,4 +705,50 @@ export async function notifyDuties(dutyIds: number[], date: string, createdBy: n
     sent += 1;
   }
   return sent;
+}
+
+// ---------- Automatic reminders ----------
+// Sends one reminder per duty that starts within the next `ahead` minutes.
+// The reminder_log table stops it from sending the same reminder twice.
+export async function runReminders(date: string, nowMinutes: number, ahead: number): Promise<number> {
+  const duties = await query<Duty>(
+    DUTY_SELECT +
+      " WHERE sl.day_of_week = ? AND TIME_TO_SEC(sl.start_time) > ? AND TIME_TO_SEC(sl.start_time) <= ? ORDER BY sl.start_time",
+    [weekdayOf(date), nowMinutes * 60, (nowMinutes + ahead) * 60],
+  );
+  if (duties.length === 0) return 0;
+
+  const ids = duties.map((d) => d.id);
+  const subs = await query<{ assignment_id: number; substitute_user_id: number }>(
+    "SELECT assignment_id, substitute_user_id FROM substitutions WHERE duty_date = ? AND assignment_id IN (?)",
+    [date, ids],
+  );
+  const requests = await query<{ user_id: number }>("SELECT user_id FROM emergency_reports WHERE report_date = ?", [date]);
+  const types = await getDutyTypes();
+
+  let sent = 0;
+  for (const d of duties) {
+    const sub = subs.find((s) => s.assignment_id === d.id);
+    // A teacher who asked for a substitute is not reminded, unless someone is covering.
+    if (!sub && requests.some((r) => r.user_id === d.userId)) continue;
+
+    const logged = await run("INSERT IGNORE INTO reminder_log (assignment_id, duty_date) VALUES (?, ?)", [d.id, date]);
+    if (logged.affectedRows === 0) continue; // already sent
+
+    const typeName = types.find((t) => t.code === d.type)?.name ?? d.type;
+    await createNotification(
+      sub ? sub.substitute_user_id : d.userId,
+      "duty-reminder",
+      "Your duty starts soon",
+      `${typeName} at ${d.place} (${d.stage}) starts at ${d.start}, in ${minutes(d.start) - nowMinutes} minutes.`,
+      null,
+    );
+    sent += 1;
+  }
+  return sent;
+}
+
+// Used by the demo tool, so a reminder can be sent again for the same date.
+export async function clearReminderLog(date: string): Promise<void> {
+  await run("DELETE FROM reminder_log WHERE duty_date = ?", [date]);
 }

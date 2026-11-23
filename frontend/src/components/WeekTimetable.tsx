@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Duty, DutyTypeInfo } from "../types";
 import { DutyBlock } from "./DutyBlock";
 
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
+const days = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 const cell: CSSProperties = { border: "1px solid #d9e0e7", padding: 8, verticalAlign: "top", textAlign: "left", fontSize: 14 };
 
@@ -27,7 +27,7 @@ export default function WeekTimetable({ duties, types, todayDay }: WeekTimetable
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 840, tableLayout: "fixed", background: "white" }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1100, tableLayout: "fixed", background: "white" }}>
         <thead>
           <tr>
             <th style={{ ...cell, width: 120 }}>Time</th>

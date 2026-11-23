@@ -2,8 +2,9 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { Duty, DutyTypeInfo, User } from "../types";
 import { DutyBlock } from "./DutyBlock";
+import DeleteButton from "./DeleteButton";
 
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
+const days = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 const cell: CSSProperties = { border: "1px solid #d9e0e7", padding: 6, verticalAlign: "top", textAlign: "left", fontSize: 13 };
 
@@ -47,7 +48,7 @@ export default function TeacherGrid({ duties, types, people, showStage, onRemove
         without duties
       </label>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 960, background: "white" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 1200, background: "white" }}>
           <thead>
             <tr>
               <th style={{ ...cell, width: 150 }}>Teacher</th>
@@ -86,8 +87,7 @@ export default function TeacherGrid({ duties, types, people, showStage, onRemove
                               {onRemove && (
                                 <>
                                   {" "}
-                                  <button onClick={() => onRemove(d.id)} aria-label="Remove duty" title="Remove duty">×</button>
-                                </>
+                              <DeleteButton onClick={() => onRemove(d.id)} label="Delete this duty" />                                </>
                               )}
                             </DutyBlock>
                           );

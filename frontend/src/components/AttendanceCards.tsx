@@ -37,7 +37,7 @@ export default function AttendanceCards({ user }: { user: User }) {
   const [stages, setStages] = useState<StageName[]>([]);
   const [types, setTypes] = useState<DutyTypeInfo[]>([]);
   const [stage, setStage] = useState<StageName | "all">(canSeeAll ? "all" : (user.homeStage ?? "Elementary"));
-  const [date, setDate] = useState("2026-10-07"); // a Wednesday, for the demo
+  const [date, setDate] = useState(new Date().toLocaleDateString("en-CA")); // a Wednesday, for the demo
   const [cards, setCards] = useState<Card[]>([]);
   const [panelFor, setPanelFor] = useState<number | null>(null); // the duty whose substitute list is open
   const [candidates, setCandidates] = useState<Candidate[]>([]);

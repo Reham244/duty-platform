@@ -13,6 +13,7 @@ import DutyTypes from "./components/DutyTypes";
 import StaffRoles from "./components/StaffRoles";
 import Notifications from "./components/Notifications";
 import ComingSoon from "./components/ComingSoon";
+import Logs from "./components/Logs";
 
 // Chooses which screen to show for the person and the menu item.
 function ScreenView({ user, screen, onNotificationsChanged }: { user: User; screen: ScreenId; onNotificationsChanged: () => void }) {
@@ -24,6 +25,7 @@ function ScreenView({ user, screen, onNotificationsChanged }: { user: User; scre
   if (screen === "dutyTypes") return <DutyTypes />;
   if (screen === "users") return <StaffRoles />;
   if (screen === "notifications") return <Notifications user={user} onChanged={onNotificationsChanged} />;
+  if (screen === "activity") return <Logs />;
   return <ComingSoon id={screen} />;
 }
 

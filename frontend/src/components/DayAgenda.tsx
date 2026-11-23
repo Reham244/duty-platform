@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { Duty, DutyTypeInfo } from "../types";
 import { DutyBlock } from "./DutyBlock";
 
-const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
+const days = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 interface Group {
   key: string;

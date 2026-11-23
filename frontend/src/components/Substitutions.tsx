@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import {
-  addSubstitution, getAvailableSubstitutes, getDutyTypes, getNeedsSubstitute,
-  getSubstitutionsOn, getUsers, reportEmergency,
+  addSubstitution, getAvailableSubstitutes, getDutyTypes, getNeedsSubstitute, getSubstitutionsOn, getUsers,
+  requestSubstitutionForDay,
 } from "../api";
 import type { Candidate, NeedRow, SubRow } from "../api";
 import type { DutyTypeInfo, StageName, User } from "../types";
@@ -14,7 +14,7 @@ export default function Substitutions({ user }: { user: User }) {
   // A head of stage only sees their own stage.
   const stage: StageName | "all" = user.role === "head_of_stage" ? (user.homeStage ?? "all") : "all";
 
-  const [date, setDate] = useState("2026-10-07");
+  const [date, setDate] = useState(new Date().toLocaleDateString("en-CA"));
   const [types, setTypes] = useState<DutyTypeInfo[]>([]);
   const [teachers, setTeachers] = useState<User[]>([]);
   const [teacherId, setTeacherId] = useState<number>(0);
@@ -22,6 +22,7 @@ export default function Substitutions({ user }: { user: User }) {
   const [subs, setSubs] = useState<SubRow[]>([]);
   const [picked, setPicked] = useState<NeedRow | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
 
   const typeName = (code: string) => types.find((t) => t.code === code)?.name ?? code;
 
@@ -48,14 +49,21 @@ export default function Substitutions({ user }: { user: User }) {
     if (picked) getAvailableSubstitutes(picked.duty, date).then(setCandidates);
   }, [picked, date]);
 
+  // A supervisor asks for a substitute for a teacher, for all their duties that day.
   async function report() {
-    await reportEmergency(teacherId, date, "Requested by the supervisor");
+    const error = await requestSubstitutionForDay(teacherId, date, "Requested by the supervisor");
+    setNote(error ? { text: error, ok: false } : { text: "Request created. It now appears in the list below.", ok: true });
     await refresh();
   }
 
   async function choose(c: Candidate) {
     if (!picked) return;
-    await addSubstitution(picked.duty.id, date, c.person.id, picked.report.message);
+    const error = await addSubstitution(picked.duty.id, date, c.person.id, picked.report.message);
+    if (error) {
+      setNote({ text: error, ok: false });
+      return;
+    }
+    setNote({ text: "Substitute added. Both teachers were notified.", ok: true });
     setPicked(null);
     await refresh();
   }
@@ -83,9 +91,11 @@ export default function Substitutions({ user }: { user: User }) {
               <option key={t.id} value={t.id}>{t.fullName} ({t.subject})</option>
             ))}
           </select>
-          <button onClick={report}>Create request</button>
+          <button onClick={report}>Create request for all their duties that day</button>
         </div>
       </div>
+
+      {note && <p style={{ color: note.ok ? "#1f7a4d" : "#a63a2b", fontWeight: 600 }}>{note.text}</p>}
 
       <div style={card}>
         <h3 style={{ marginTop: 0 }}>Duties that need a substitute</h3>
@@ -101,6 +111,7 @@ export default function Substitutions({ user }: { user: User }) {
           >
             <div>
               <b>{n.person.fullName}</b> ({n.person.subject}), substitution requested
+              {n.report.message && <small style={{ color: "#6b7a90" }}>: {n.report.message}</small>}
               <br />
               <small>
                 {typeName(n.duty.type)} at {n.duty.place}, {n.duty.stage}, {n.duty.start} to {n.duty.end}
@@ -139,8 +150,8 @@ export default function Substitutions({ user }: { user: User }) {
             </table>
           )}
           <p style={{ color: "#6b7a90", fontSize: 13 }}>
-            The original duty will be marked Substituted (excused, not counted as missed). The substitute
-            sees the duty in My duties and is marked on the attendance card.
+            The original duty will be marked Excused (not counted as missed). The substitute sees the duty in My duties
+            and is marked on the attendance card.
           </p>
         </div>
       )}

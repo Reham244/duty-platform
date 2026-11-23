@@ -143,3 +143,67 @@ export interface Coverage {
   expected: number; // scheduled duties in the period
   recorded: number; // duties with an attendance mark
 }
+
+export interface AuditEntry {
+  id: number;
+  createdAt: string;
+  actorId: number | null;
+  actorName: string;
+  actorRole: string | null;
+  action: string;
+  summary: string;
+  details: string | null;
+  outcome: "ok" | "denied" | "error";
+}
+
+// One line behind the statistics: a marked duty, or a substitution.
+export interface StatRecord {
+  id: string;
+  date: string;
+  kind: "own" | "substitute";
+  status: "present" | "late" | "absent" | "unmarked";
+  personId: number; // the person counted: the assigned teacher, or the substitute
+  personName: string;
+  subject: string | null;
+  excusedId: number | null; // for a substitution: the teacher who was excused
+  excusedName: string | null;
+  excusedSubject: string | null;
+  stage: StageName;
+  type: string;
+  place: string;
+  day: number;
+  start: string;
+  end: string;
+  hours: number;
+  byName: string | null; // who marked it, or who added the substitution
+}
+export interface SystemLogEntry {
+  id: number;
+  createdAt: string;
+  level: "info" | "warn" | "error";
+  source: string; // http, db, scheduler, app
+  method: string | null;
+  path: string | null;
+  status: number | null;
+  durationMs: number | null;
+  userId: number | null;
+  userName: string | null;
+  message: string;
+  details: string | null;
+}
+
+export interface SubstitutionRequest {
+  id: number;
+  dutyId: number;
+  date: string;
+  reason: string;
+  status: "open" | "covered";
+  createdAt: string;
+  duty: Duty;
+  substituteName: string | null;
+}
+
+export interface NormalDuties {
+  default: number; // normal duties per week for the school
+  perUser: Record<number, number>; // a different number for some people
+}

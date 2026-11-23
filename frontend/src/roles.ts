@@ -10,7 +10,8 @@ export type ScreenId =
   | "dutyTypes"
   | "users"
   | "sessions"
-  | "notifications";
+  | "notifications"
+  | "activity";
 
 export const screens: Record<ScreenId, { title: string; about: string; ready: boolean }> = {
   myDuties: { title: "My duties", about: "Your weekly duties and your own attendance.", ready: true },
@@ -23,6 +24,7 @@ export const screens: Record<ScreenId, { title: string; about: string; ready: bo
   users: { title: "Staff and roles", about: "Pick a person and assign their role.", ready: true },
   sessions: { title: "Session attendance", about: "See the schedule of your classes and mark each teacher's session with one click. The schedule comes from the LMS.", ready: false },
   notifications: { title: "Notifications", about: "Reminders about your duties and substitutions.", ready: true },
+  activity: { title: "Logs", about: "The audit log (who did what) and the system log (API requests, errors and scheduled jobs).", ready: true },
 };
 
 export const roleLabels: Record<Role, string> = {
@@ -39,7 +41,7 @@ export const menuByRole: Record<Role, ScreenId[]> = {
   teacher: ["myDuties", "notifications"],
   supervisor: ["attendance", "substitutions", "schedule", "notifications"],
   head_of_stage: ["attendance", "substitutions", "schedule", "stats", "notifications"],
-  admin: ["attendance", "substitutions", "schedule", "allStats", "dutyTypes", "users", "notifications"],
+  admin: ["attendance", "substitutions", "schedule", "allStats", "dutyTypes", "users", "activity", "notifications"],
   matron: ["sessions", "notifications"],
   hr: ["allStats", "notifications"],
 };

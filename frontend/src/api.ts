@@ -1,6 +1,6 @@
 import type {
   AppNotification, AttendanceRow, AttendanceStatus, Candidate, Card, Coverage, Duty, DutyTypeInfo, NeedRow,
-  NewDuty, StageName, StatsRow, SubRow, SubstituteDuty, SubstitutionSummary, User,
+  NewDuty, StageName, StatsRow, SubRow, SubstituteDuty, SubstitutionSummary, User, AuditEntry, SystemLogEntry, StatRecord, NormalDuties, SubstitutionRequest,
 } from "./types";
 
 // The screens keep importing these shapes from here.
@@ -94,14 +94,6 @@ export const getMySubstituteDuties = (userId: number) =>
 export const getMySubstitutionSummary = (userId: number) =>
   request<SubstitutionSummary>(`/users/${userId}/substitution-summary`);
 
-export async function hasEmergency(userId: number, date: string): Promise<boolean> {
-  const r = await request<{ reported: boolean }>(`/users/${userId}/emergency?` + query({ date }));
-  return r.reported;
-}
-
-export async function reportEmergency(userId: number, date: string, message: string): Promise<void> {
-  await request("/emergencies", json("POST", { userId, date, message }));
-}
 
 // ---------- Attendance cards ----------
 export const getCards = (stage: StageName | "all", day: number, date: string) =>
@@ -175,3 +167,36 @@ export async function runReminderCheck(date: string, time: string, reset: boolea
   const r = await request<{ sent: number }>("/reminders/run", json("POST", { date, time, reset }));
   return r.sent;
 }
+
+// ---------- Activity log (admin) ----------
+export const getAuditLog = (p: { from: string; to: string; actor: string; action: string; q: string }) =>
+  request<AuditEntry[]>("/audit?" + query({ ...p, limit: "300" }));
+// ---------- System log (admin) ----------
+export const getSystemLog = (
+  p: { from: string; to: string; level: string; source: string; method: string; user: string; q: string },
+  quiet = false,
+) => request<SystemLogEntry[]>("/logs/system?" + query({ ...p, limit: "300" }), {}, quiet);
+// ---------- Statistics: the records behind the numbers ----------
+export const getStatRecords = (stage: StageName | "all", from: string, to: string) =>
+  request<StatRecord[]>("/stats/records?" + query({ stage, from, to }));
+
+// ---------- Substitution requests ----------
+export const getMyRequests = (userId: number) => request<SubstitutionRequest[]>(`/users/${userId}/requests`);
+
+// Returns an error message, or null when the request was saved.
+export const requestSubstitution = (dutyIds: number[], date: string, reason: string) =>
+  attempt("/requests", json("POST", { dutyIds, date, reason }));
+
+// Every duty of a teacher on a day (used by the supervisor's request box).
+export const requestSubstitutionForDay = (userId: number, date: string, reason: string) =>
+  attempt("/requests", json("POST", { userId, date, reason, allDay: true }));
+
+export const cancelRequest = (id: number) => attempt(`/requests/${id}`, { method: "DELETE" });
+
+// ---------- The normal number of duties ----------
+export const getNormalDuties = () => request<NormalDuties>("/settings/normal-duties");
+
+export const setNormalDefault = (value: number) => attempt("/settings/normal-duties", json("PUT", { value }));
+
+export const setUserTarget = (userId: number, value: number | null) =>
+  attempt(`/users/${userId}/target`, json("PUT", { value }));

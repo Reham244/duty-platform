@@ -1,39 +1,15 @@
+import NormalLoadCard from "../stats/NormalLoadCard";
 import { useEffect, useState } from "react";
-import { getStages, getStats, getStatsCoverage } from "../api";
+import { getDutyTypes, getNormalDuties, getStages, getStatRecords, getStats, getStatsCoverage, getUsers } from "../api";
 import type { StatsRow } from "../api";
-import type { Coverage, StageName, User } from "../types";
+import { sections } from "../statsConfig";
+import type { Section } from "../statsConfig";
+import type { Coverage, DutyTypeInfo, NormalDuties, StageName, StatRecord, User } from "../types";
+import StatsDetail from "./StatsDetail";
 
 const isoDaysAgo = (n: number) => new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 const card = { background: "white", border: "1px solid #d9e0e7", borderRadius: 12, padding: 16 };
-
-// One ranked list. Each section answers one question about the teachers.
-interface Section {
-  key: string;
-  title: string;
-  note: string;
-  colour: string;
-  value: (r: StatsRow) => number;
-  show: (r: StatsRow) => boolean; // who is ranked in this section
-  best: "high" | "low"; // which end comes first
-  format: (n: number) => string;
-  scaleMax?: number; // for percentages
-}
-
-const count = (n: number) => String(n);
-const percent = (n: number) => `${n}%`;
-const hours = (n: number) => `${n.toFixed(1)} h`;
-const enough = (r: StatsRow) => r.marked >= 3;
-
-const sections: Section[] = [
-  { key: "late", title: "Late arrivals", note: "Duties marked Late. Most late first.", colour: "#b5651d", value: (r) => r.late, show: (r) => r.late > 0, best: "high", format: count },
-  { key: "absent", title: "Missed duties", note: "Duties marked Absent. Excused duties are not counted.", colour: "#a63a2b", value: (r) => r.absent, show: (r) => r.absent > 0, best: "high", format: count },
-  { key: "low", title: "Lowest attendance rate", note: "Present divided by marked duties. Only people with at least 3 marked duties.", colour: "#a63a2b", value: (r) => r.rate, show: enough, best: "low", format: percent, scaleMax: 100 },
-  { key: "best", title: "Best attendance rate", note: "Present divided by marked duties. Only people with at least 3 marked duties.", colour: "#1f7a4d", value: (r) => r.rate, show: enough, best: "high", format: percent, scaleMax: 100 },
-  { key: "hours", title: "Hours on duty (workload)", note: "Hours when present or late, including duties taken as a substitute.", colour: "#1b6fd1", value: (r) => r.hours, show: (r) => r.hours > 0, best: "high", format: hours },
-  { key: "covered", title: "Substitutes", note: "Duties taken for another teacher.", colour: "#7a4fb0", value: (r) => r.covered, show: (r) => r.covered > 0, best: "high", format: count },
-  { key: "excused", title: "Excused", note: "Own duties that someone else covered. Not counted as missed.", colour: "#7a4fb0", value: (r) => r.excused, show: (r) => r.excused > 0, best: "high", format: count },
-];
 
 function sortFor(list: StatsRow[], s: Section): StatsRow[] {
   const dir = s.best === "high" ? -1 : 1;
@@ -57,9 +33,10 @@ interface SectionCardProps {
   matches: StatsRow[]; // people found by the search
   searching: boolean;
   limit: number; // 0 means all
+  onOpen: () => void;
 }
 
-function SectionCard({ section: s, rows, matches, searching, limit }: SectionCardProps) {
+function SectionCard({ section: s, rows, matches, searching, limit, onOpen }: SectionCardProps) {
   const sorted = sortFor(rows.filter(s.show), s);
   const ranks = ranksOf(sorted, s.value);
   const scale = s.scaleMax ?? Math.max(1, ...sorted.map(s.value));
@@ -67,7 +44,10 @@ function SectionCard({ section: s, rows, matches, searching, limit }: SectionCar
 
   return (
     <div style={card}>
-      <h3 style={{ margin: "0 0 2px", color: s.colour }}>{s.title}</h3>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <h3 style={{ margin: "0 0 2px", color: s.colour }}>{s.title}</h3>
+        <button onClick={onOpen} style={{ whiteSpace: "nowrap", fontWeight: 700 }}>Details and chart ›</button>
+      </div>
       <div style={{ color: "#6b7a90", fontSize: 12, marginBottom: 10 }}>{s.note}</div>
       {list.length === 0 ? (
         <div style={{ color: "#6b7a90", padding: "8px 0" }}>Nobody in this period.</div>
@@ -97,6 +77,7 @@ function SectionCard({ section: s, rows, matches, searching, limit }: SectionCar
 export default function Statistics({ user }: { user: User }) {
   const locked = user.role === "head_of_stage";
   const [stages, setStages] = useState<StageName[]>([]);
+  const [types, setTypes] = useState<DutyTypeInfo[]>([]);
   const [stage, setStage] = useState<StageName | "all">(user.homeStage ?? "all");
   const [from, setFrom] = useState(isoDaysAgo(28));
   const [to, setTo] = useState(isoDaysAgo(0));
@@ -104,15 +85,27 @@ export default function Statistics({ user }: { user: User }) {
   const [coverage, setCoverage] = useState<Coverage>({ expected: 0, recorded: 0 });
   const [search, setSearch] = useState("");
   const [limit, setLimit] = useState(5);
+  const [detail, setDetail] = useState<string | null>(null);
+  const [records, setRecords] = useState<StatRecord[]>([]);
+  const [normal, setNormal] = useState<NormalDuties>({ default: 5, perUser: {} });
+  const [staff, setStaff] = useState<User[]>([]);
+  const detailOpen = detail !== null;
 
   useEffect(() => {
     getStages().then(setStages);
-  }, []);
+    getDutyTypes().then(setTypes);
+    getNormalDuties().then(setNormal);
+    getUsers().then(setStaff);  }, []);
 
   useEffect(() => {
     getStats(stage, from, to).then(setRows);
     getStatsCoverage(stage, from, to).then(setCoverage);
   }, [stage, from, to]);
+
+  // The individual records are only loaded when a detail page is open.
+  useEffect(() => {
+    if (detailOpen) getStatRecords(stage, from, to).then(setRecords);
+  }, [detailOpen, stage, from, to]);
 
   const q = search.trim().toLowerCase();
   const searching = q !== "";
@@ -145,6 +138,7 @@ export default function Statistics({ user }: { user: User }) {
   );
 
   const single = matches.length === 1 ? matches[0] : undefined;
+  const current = sections.find((s) => s.key === detail);
 
   return (
     <div>
@@ -172,7 +166,7 @@ export default function Statistics({ user }: { user: User }) {
         </label>
         <label>
           Show{" "}
-          <select value={limit} onChange={(e) => setLimit(Number(e.target.value))} disabled={searching}>
+          <select value={limit} onChange={(e) => setLimit(Number(e.target.value))} disabled={searching || detailOpen}>
             <option value={5}>Top 5</option>
             <option value={10}>Top 10</option>
             <option value={0}>All</option>
@@ -180,64 +174,103 @@ export default function Statistics({ user }: { user: User }) {
         </label>
       </div>
 
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-        {box("Duties marked", String(total.marked), "#0f4c8a", `${rows.length} people`)}
-        {box("Attendance rate", `${share(total.present)}%`, "#1f7a4d", "present ÷ marked")}
-        {box("Late rate", `${share(total.late)}%`, "#b5651d")}
-        {box("Missed rate", `${share(total.absent)}%`, "#a63a2b")}
-        {box("Hours on duty", total.hours.toFixed(1), "#1b6fd1", `${rows.length ? (total.hours / rows.length).toFixed(1) : "0.0"} per person`)}
-        {box("Substitutions", String(total.covered), "#7a4fb0", `${total.excused} duties excused`)}
-        {box(
-          "Data completeness",
-          `${complete}%`,
-          complete >= 90 ? "#1f7a4d" : complete >= 70 ? "#b5651d" : "#a63a2b",
-          `${unmarked} scheduled duties have no mark`,
-        )}
-      </div>
-
-      {searching && rows.length > 0 && matches.length === 0 && (
-        <div style={{ ...card, color: "#6b7a90", marginBottom: 16 }}>
-          No teacher with marked duties matches "{search}" in this period.
-        </div>
-      )}
-
-      {single && (
-        <div style={{ ...card, marginBottom: 16 }}>
-          <h3 style={{ marginTop: 0 }}>
-            {single.person.fullName} {single.person.subject && <small style={{ color: "#6b7a90" }}>({single.person.subject})</small>}
-          </h3>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            {box("Attended", String(single.present), "#1f7a4d")}
-            {box("Late", String(single.late), "#b5651d")}
-            {box("Missed", String(single.absent), "#a63a2b")}
-            {box("Attendance rate", single.marked ? `${single.rate}%` : "-", "#1b6fd1")}
-            {box("Hours on duty", single.hours.toFixed(1), "#1b6fd1")}
-            {box("Substitute", String(single.covered), "#7a4fb0")}
-            {box("Excused", String(single.excused), "#7a4fb0")}
-          </div>
-        </div>
-      )}
-
-      {rows.length === 0 ? (
-        <div style={{ ...card, color: "#6b7a90", textAlign: "center" }}>No marked duties in this period.</div>
+      {current ? (
+        <StatsDetail
+          section={current}
+          records={records}
+          rows={rows}
+          types={types}
+          stage={stage}
+          from={from}
+          to={to}
+          search={search}
+          onBack={() => setDetail(null)}
+        />
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: 16 }}>
-          {sections.map((s) => (
-            <SectionCard key={s.key} section={s} rows={rows} matches={matches} searching={searching} limit={limit} />
-          ))}
+        <>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+            {box("Duties marked", String(total.marked), "#0f4c8a", `${rows.length} people`)}
+            {box("Attendance rate", `${share(total.present)}%`, "#1f7a4d", "present ÷ marked")}
+            {box("Late rate", `${share(total.late)}%`, "#b5651d")}
+            {box("Missed rate", `${share(total.absent)}%`, "#a63a2b")}
+            {box("Hours on duty", total.hours.toFixed(1), "#1b6fd1", `${rows.length ? (total.hours / rows.length).toFixed(1) : "0.0"} per person`)}
+            {box("Substitutions", String(total.covered), "#7a4fb0", `${total.excused} duties excused`)}
+            {box(
+              "Data completeness",
+              `${complete}%`,
+              complete >= 90 ? "#1f7a4d" : complete >= 70 ? "#b5651d" : "#a63a2b",
+              `${unmarked} scheduled duties have no mark`,
+            )}
+          </div>
+
+          {searching && rows.length > 0 && matches.length === 0 && (
+            <div style={{ ...card, color: "#6b7a90", marginBottom: 16 }}>
+              No teacher with marked duties matches "{search}" in this period.
+            </div>
+          )}
+
+          {single && (
+            <div style={{ ...card, marginBottom: 16 }}>
+              <h3 style={{ marginTop: 0 }}>
+                {single.person.fullName} {single.person.subject && <small style={{ color: "#6b7a90" }}>({single.person.subject})</small>}
+              </h3>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {box("Attended", String(single.present), "#1f7a4d")}
+                {box("Late", String(single.late), "#b5651d")}
+                {box("Missed", String(single.absent), "#a63a2b")}
+                {box("Attendance rate", single.marked ? `${single.rate}%` : "-", "#1b6fd1")}
+                {box("Hours on duty", single.hours.toFixed(1), "#1b6fd1")}
+                {box("Substitute", String(single.covered), "#7a4fb0")}
+                {box("Excused", String(single.excused), "#7a4fb0")}
+              </div>
+            </div>
+          )}
+
+      {stage === "all" && staff.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <NormalLoadCard
+            teachers={staff.filter((u) => u.role === "teacher")}
+            normal={normal}
+            done={Object.fromEntries(rows.map((r) => [r.person.id, r.present + r.late]))}
+            from={from}
+            to={to}
+            limit={limit}
+            search={search}
+            onPick={setSearch}
+          />
         </div>
       )}
 
-      <div style={{ ...card, marginTop: 16, color: "#556274", fontSize: 13 }}>
-        <b>How the numbers are counted</b>
-        <ul style={{ marginBottom: 0 }}>
-          <li>Only duties with an attendance mark are counted. Unmarked duties are not counted as missed.</li>
-          <li>Attendance rate = present divided by all marked duties. Late and missed lower the rate.</li>
-          <li>Hours count when the person was present or late, from the duty's start and end time.</li>
-          <li>Excused: the duty was covered by a substitute. It is not missed, and the substitute is counted instead.</li>
-          <li>Data completeness = marked duties divided by scheduled duties up to today. Below 90%, treat the rankings with care.</li>
-        </ul>
-      </div>
+          {rows.length === 0 ? (
+            <div style={{ ...card, color: "#6b7a90", textAlign: "center" }}>No marked duties in this period.</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))", gap: 16 }}>
+              {sections.map((s) => (
+                <SectionCard
+                  key={s.key}
+                  section={s}
+                  rows={rows}
+                  matches={matches}
+                  searching={searching}
+                  limit={limit}
+                  onOpen={() => setDetail(s.key)}
+                />
+              ))}
+            </div>
+          )}
+
+          <div style={{ ...card, marginTop: 16, color: "#556274", fontSize: 13 }}>
+            <b>How the numbers are counted</b>
+            <ul style={{ marginBottom: 0 }}>
+              <li>Only duties with an attendance mark are counted. Unmarked duties are not counted as missed.</li>
+              <li>Attendance rate = present divided by all marked duties. Late and missed lower the rate.</li>
+              <li>Hours count when the person was present or late, from the duty's start and end time.</li>
+              <li>Excused: the duty was covered by a substitute. It is not missed, and the substitute is counted instead.</li>
+              <li>Data completeness = marked duties divided by scheduled duties up to today. Below 90%, treat the rankings with care.</li>
+            </ul>
+          </div>
+        </>
+      )}
     </div>
   );
 }

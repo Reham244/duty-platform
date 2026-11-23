@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { findUser } from "./services.js";
+import { findUser, logActivity } from "./services.js";
 import type { Role, StageName, User } from "./types.js";
 
 // Reads the x-user-id header and finds the person. Real sign-in replaces this later.
@@ -23,11 +23,15 @@ export function loadUser(req: Request, res: Response, next: NextFunction): void 
 
 export const currentUser = (res: Response): User => res.locals.user as User;
 
-// Only the listed roles may continue.
+// Only the listed roles may continue. A refusal is written to the activity log.
 export function requireRole(...roles: Role[]) {
-  return (_req: Request, res: Response, next: NextFunction): void => {
-    if (!roles.includes(currentUser(res).role)) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const user = currentUser(res);
+    if (!roles.includes(user.role)) {
       res.status(403).json({ error: "Your role is not allowed to do this." });
+      logActivity(user.id, "access.denied", `Tried ${req.method} ${req.originalUrl}, which ${user.role} may not do`, undefined, "denied").catch(
+        (e: Error) => console.error("Could not write the activity log:", e.message),
+      );
       return;
     }
     next();
